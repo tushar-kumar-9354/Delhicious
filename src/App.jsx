@@ -408,7 +408,7 @@ function App() {
   const safetyTimeoutRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const transitionStartedRef = useRef(false);
-  
+
   // Track if loading was already bypassed/played in the session
   const [transitionCompleted, setTransitionCompleted] = useState(() => {
     return sessionStorage.getItem('delhicious_intro_played') === 'true';
@@ -428,7 +428,7 @@ function App() {
   const [selectedSizes, setSelectedSizes] = useState({});
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  
+
   // New States for Checkout Refinements
   const [checkoutAddress, setCheckoutAddress] = useState('');
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
@@ -444,7 +444,7 @@ function App() {
   const [trackingIdInput, setTrackingIdInput] = useState('');
   const [activeTrackingOrder, setActiveTrackingOrder] = useState(null);
   const [matchingOrders, setMatchingOrders] = useState([]);
-  
+
   useEffect(() => {
     const handleStorage = (e) => {
       if (e.key === 'delhicious_orders') {
@@ -574,7 +574,7 @@ function App() {
     if (firstPlaythroughDone) return;
     console.log(`[Video] First playthrough finished at ${Date.now() - startTimeRef.current}ms`);
     setFirstPlaythroughDone(true);
-    
+
     // Enable looping for background continuity if transition is delayed
     if (videoRef.current) {
       videoRef.current.loop = true;
@@ -665,13 +665,13 @@ function App() {
     const size = item.prices ? (selectedSizes[item.id] || Object.keys(item.prices)[0]) : null;
     const priceStr = item.prices ? item.prices[size] : item.price;
     const priceNum = parseInt(priceStr.replace(/[^0-9]/g, '')) || 0;
-    
+
     setCartItems(prev => {
       const existingItem = prev.find(i => i.id === item.id && i.size === size);
       if (existingItem) {
-        return prev.map(i => 
-          (i.id === item.id && i.size === size) 
-            ? { ...i, quantity: i.quantity + 1 } 
+        return prev.map(i =>
+          (i.id === item.id && i.size === size)
+            ? { ...i, quantity: i.quantity + 1 }
             : i
         );
       }
@@ -704,7 +704,7 @@ function App() {
   const getCartTotal = () => {
     return cartItems.reduce((total, item) => total + (item.priceNum * item.quantity), 0);
   };
-  
+
   const getCartItemCount = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
@@ -741,11 +741,11 @@ function App() {
     e.preventDefault();
     setIsCartOpen(false);
     setIsProcessingPayment(true);
-    
+
     setTimeout(() => {
       setIsProcessingPayment(false);
       setPaymentSuccess(true);
-      
+
       const newOrderId = Math.random().toString(36).substring(2, 8).toUpperCase();
       const newOrder = {
         id: newOrderId,
@@ -757,13 +757,13 @@ function App() {
         customerName: e.target[0].value,
         customerPhone: e.target[1].value
       };
-      
+
       const updatedOrders = [...orders, newOrder];
       setOrders(updatedOrders);
       localStorage.setItem('delhicious_orders', JSON.stringify(updatedOrders));
       setOrderSummary(newOrder);
       setActiveTrackingOrder(newOrder);
-      
+
       setTimeout(() => {
         setPaymentSuccess(false);
         setView('tracking');
@@ -782,7 +782,7 @@ function App() {
       alert("Order not found. Please check your ID or Phone.");
       return;
     }
-    
+
     if (matches.length === 1) {
       setActiveTrackingOrder(matches[0]);
       setMatchingOrders([]);
@@ -828,20 +828,20 @@ function App() {
 
       {/* Home Page Section */}
       <div className={`home-page ${transitionStarted ? 'active' : ''} ${view === 'preparing' ? 'preparing-active' : ''}`}>
-        
+
         {/* Top Floating Oval Navigation Bar */}
         <nav className={`top-navbar ${transitionStarted ? 'active' : ''} ${view === 'preparing' ? 'hidden' : ''}`}>
           <div className="navbar-logo-area">
             {/* Landing spot placeholder for the logo */}
             <div className="logo-placeholder"></div>
             <span className={`brand-name ${transitionStarted ? 'active' : ''}`}>
-              delhicious <VegIcon />
+              Delhicious <VegIcon />
             </span>
           </div>
-          
+
           {/* Hamburger toggle button for mobile menu */}
-          <button 
-            className={`hamburger-btn ${menuOpen ? 'open' : ''}`} 
+          <button
+            className={`hamburger-btn ${menuOpen ? 'open' : ''}`}
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle Navigation Menu"
           >
@@ -1033,7 +1033,7 @@ function App() {
                     <p className="section-text">
                       From fresh, crispy capsicum to rich paneer tikka toppings and our premium blend of melted mozzarella cheese, everything is prepared under strict hygiene standards. Whether you order our signature Delhi-cious Pizza, fresh stuffed garlic bread, or hot combos, you're experiencing a premium vegetarian feast.
                     </p>
-                    
+
                     <div className="about-features">
                       <div className="feature-item">
                         <span className="feature-icon">🟢</span>
@@ -1070,7 +1070,7 @@ function App() {
                       Enjoy hot and fresh food delivered straight to your doorstep or drop by our kitchen!
                     </p>
                   </div>
-                  
+
                   <div className="contact-grid redesigned-contact-grid">
                     <div className="contact-info-list">
                       <div className="contact-info-item">
@@ -1114,14 +1114,14 @@ function App() {
                     </div>
 
                     <div className="contact-map-container">
-                      <iframe 
+                      <iframe
                         title="Delhicious Location"
-                        src="https://maps.google.com/maps?q=A-11,%20Ambedkar%20Colony,%20Andheria%20More,%20Chhatarpur,%20New%20Delhi&t=&z=16&ie=UTF8&iwloc=&output=embed" 
-                        width="100%" 
-                        height="100%" 
-                        style={{ border: 0, minHeight: '320px', display: 'block' }} 
-                        allowFullScreen="" 
-                        loading="lazy" 
+                        src="https://maps.google.com/maps?q=A-11,%20Ambedkar%20Colony,%20Andheria%20More,%20Chhatarpur,%20New%20Delhi&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0, minHeight: '320px', display: 'block' }}
+                        allowFullScreen=""
+                        loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade">
                       </iframe>
                     </div>
@@ -1133,7 +1133,7 @@ function App() {
               <footer className="app-footer">
                 <div className="footer-container">
                   <div className="footer-col brand-col">
-                    <h3>delhicious <VegIcon /></h3>
+                    <h3>Delhicious <VegIcon /></h3>
                     <p>100% Pure Vegetarian kitchen serving delicious pizzas, burgers, and snacks in New Delhi.</p>
                   </div>
                   <div className="footer-col links-col">
@@ -1242,96 +1242,96 @@ function App() {
             </div>
           )}
 
-      {/* Checkout View */}
-      {view === 'checkout' && (
-        <div className="checkout-view-container">
-          {isProcessingPayment && (
-            <div className="payment-loading-overlay">
-              <div className="payment-spinner"></div>
-              <p>Processing Payment...</p>
+          {/* Checkout View */}
+          {view === 'checkout' && (
+            <div className="checkout-view-container">
+              {isProcessingPayment && (
+                <div className="payment-loading-overlay">
+                  <div className="payment-spinner"></div>
+                  <p>Processing Payment...</p>
+                </div>
+              )}
+              {paymentSuccess && (
+                <div className="payment-success-toast animate-scale-up">
+                  <div className="toast-icon">✅</div>
+                  <div className="toast-content">
+                    <h3>Payment Successful!</h3>
+                    <p>Redirecting to tracker...</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="checkout-card">
+                <h2 className="checkout-title">Complete Your Order</h2>
+                <div className="checkout-summary">
+                  <h3>Order Summary</h3>
+                  <p>{getCartItemCount()} items | Total: Rs. {getCartTotal()}</p>
+                </div>
+                <form className="checkout-form" onSubmit={handleCheckoutSubmit}>
+                  <div className="form-row">
+                    <div className="form-group-half">
+                      <label>Full Name</label>
+                      <input type="text" placeholder="John Doe" required />
+                    </div>
+                    <div className="form-group-half">
+                      <label>Phone Number</label>
+                      <input
+                        type="tel"
+                        placeholder="e.g. 9876543210"
+                        pattern="[0-9]{10}"
+                        maxLength="10"
+                        title="Please enter exactly 10 digits"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group-full">
+                    <label>Email Address <span className="optional">(Optional)</span></label>
+                    <input type="email" placeholder="john@example.com" />
+                  </div>
+
+                  <div className="form-group-full address-group">
+                    <label>Delivery Address</label>
+                    <div className="address-actions">
+                      <button type="button" className="btn-location" onClick={handleFetchLocation}>
+                        📍 Use Current Location
+                      </button>
+                    </div>
+                    <textarea
+                      rows="3"
+                      placeholder="Building name, street, landmark, city, pincode"
+                      required
+                      value={checkoutAddress}
+                      onChange={(e) => setCheckoutAddress(e.target.value)}
+                    ></textarea>
+                  </div>
+
+                  <div className="form-group-full">
+                    <label>Delivery Instructions <span className="optional">(Optional)</span></label>
+                    <textarea
+                      rows="2"
+                      placeholder="e.g. Leave at the door, ring bell..."
+                      value={deliveryInstructions}
+                      onChange={(e) => setDeliveryInstructions(e.target.value)}
+                    ></textarea>
+                  </div>
+
+                  <div className="form-group-full">
+                    <label>Payment Method</label>
+                    <select required>
+                      <option value="cash">Cash on Delivery</option>
+                      <option value="card">Credit / Debit Card</option>
+                      <option value="upi">UPI</option>
+                    </select>
+                  </div>
+                  <div className="checkout-actions">
+                    <button type="button" className="btn-cancel" onClick={() => setView('home')}>Cancel</button>
+                    <button type="submit" className="btn-pay-now">Proceed to Payment</button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
-          {paymentSuccess && (
-            <div className="payment-success-toast animate-scale-up">
-              <div className="toast-icon">✅</div>
-              <div className="toast-content">
-                <h3>Payment Successful!</h3>
-                <p>Redirecting to tracker...</p>
-              </div>
-            </div>
-          )}
-
-          <div className="checkout-card">
-            <h2 className="checkout-title">Complete Your Order</h2>
-            <div className="checkout-summary">
-              <h3>Order Summary</h3>
-              <p>{getCartItemCount()} items | Total: Rs. {getCartTotal()}</p>
-            </div>
-            <form className="checkout-form" onSubmit={handleCheckoutSubmit}>
-              <div className="form-row">
-                <div className="form-group-half">
-                  <label>Full Name</label>
-                  <input type="text" placeholder="John Doe" required />
-                </div>
-                <div className="form-group-half">
-                  <label>Phone Number</label>
-                  <input 
-                    type="tel" 
-                    placeholder="e.g. 9876543210" 
-                    pattern="[0-9]{10}" 
-                    maxLength="10" 
-                    title="Please enter exactly 10 digits" 
-                    required 
-                  />
-                </div>
-              </div>
-              <div className="form-group-full">
-                <label>Email Address <span className="optional">(Optional)</span></label>
-                <input type="email" placeholder="john@example.com" />
-              </div>
-              
-              <div className="form-group-full address-group">
-                <label>Delivery Address</label>
-                <div className="address-actions">
-                  <button type="button" className="btn-location" onClick={handleFetchLocation}>
-                    📍 Use Current Location
-                  </button>
-                </div>
-                <textarea 
-                  rows="3" 
-                  placeholder="Building name, street, landmark, city, pincode" 
-                  required 
-                  value={checkoutAddress}
-                  onChange={(e) => setCheckoutAddress(e.target.value)}
-                ></textarea>
-              </div>
-              
-              <div className="form-group-full">
-                <label>Delivery Instructions <span className="optional">(Optional)</span></label>
-                <textarea 
-                  rows="2" 
-                  placeholder="e.g. Leave at the door, ring bell..."
-                  value={deliveryInstructions}
-                  onChange={(e) => setDeliveryInstructions(e.target.value)}
-                ></textarea>
-              </div>
-
-              <div className="form-group-full">
-                <label>Payment Method</label>
-                <select required>
-                  <option value="cash">Cash on Delivery</option>
-                  <option value="card">Credit / Debit Card</option>
-                  <option value="upi">UPI</option>
-                </select>
-              </div>
-              <div className="checkout-actions">
-                <button type="button" className="btn-cancel" onClick={() => setView('home')}>Cancel</button>
-                <button type="submit" className="btn-pay-now">Proceed to Payment</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
 
         </div>
@@ -1400,12 +1400,12 @@ function App() {
               </div>
               <h2>Track Your Order</h2>
               <form onSubmit={handleTrackOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
-                <input 
-                  type="text" 
-                  placeholder="Enter Order ID or Phone" 
-                  value={trackingIdInput} 
-                  onChange={e => setTrackingIdInput(e.target.value)} 
-                  required 
+                <input
+                  type="text"
+                  placeholder="Enter Order ID or Phone"
+                  value={trackingIdInput}
+                  onChange={e => setTrackingIdInput(e.target.value)}
+                  required
                   style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'inherit' }}
                 />
                 <button type="submit" className="btn-pay-now">Track Now</button>
@@ -1418,16 +1418,16 @@ function App() {
               <p style={{ color: '#6e5d54', marginBottom: '20px' }}>Multiple orders found for this phone number. Please choose one:</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
                 {matchingOrders.slice().reverse().map(order => (
-                  <div 
-                    key={order.id} 
+                  <div
+                    key={order.id}
                     onClick={() => setActiveTrackingOrder(order)}
-                    style={{ 
-                      padding: '16px', 
-                      borderRadius: '12px', 
-                      border: '1px solid rgba(45, 27, 17, 0.1)', 
-                      backgroundColor: '#fffcfb', 
-                      cursor: 'pointer', 
-                      transition: 'all 0.2s', 
+                    style={{
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(45, 27, 17, 0.1)',
+                      backgroundColor: '#fffcfb',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
                       textAlign: 'left',
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -1451,11 +1451,11 @@ function App() {
                         Items: {order.items ? order.items.length : 0} | Total: Rs. {order.total}
                       </div>
                     </div>
-                    <span 
-                      style={{ 
-                        padding: '6px 12px', 
-                        borderRadius: '20px', 
-                        fontSize: '0.8rem', 
+                    <span
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.8rem',
                         fontWeight: '700',
                         backgroundColor: order.status === 'Cancelled' ? '#ffe5e5' : '#e6f6f0',
                         color: order.status === 'Cancelled' ? '#b32619' : '#0f8a5f'
@@ -1467,9 +1467,9 @@ function App() {
                 ))}
               </div>
               <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
-                <button 
-                  className="btn-cancel" 
-                  onClick={() => { setMatchingOrders([]); }} 
+                <button
+                  className="btn-cancel"
+                  onClick={() => { setMatchingOrders([]); }}
                   style={{ flex: 1, padding: '12px', borderRadius: '10px', fontSize: '0.95rem' }}
                 >
                   Back to Search
@@ -1489,55 +1489,56 @@ function App() {
               <div className="delivery-header">
                 {!(activeTrackingOrder.status === 'Preparing' || activeTrackingOrder.status === 'Out for Delivery') && (
                   <div className="success-icon" style={{ color: activeTrackingOrder.status === 'Cancelled' ? '#b32619' : 'inherit' }}>
-                    {activeTrackingOrder.status === 'Delivered' ? '✅' : 
-                     activeTrackingOrder.status === 'Cancelled' ? '❌' : '🎉'}
+                    {activeTrackingOrder.status === 'Delivered' ? '✅' :
+                      activeTrackingOrder.status === 'Cancelled' ? '❌' : '🎉'}
                   </div>
                 )}
                 <h2 className="preparing-title">Order ID: {activeTrackingOrder.id}</h2>
                 <p className="preparing-text">Current Status: <strong style={{ color: activeTrackingOrder.status === 'Cancelled' ? '#b32619' : 'inherit' }}>{activeTrackingOrder.status}</strong></p>
               </div>
-              
+
               {activeTrackingOrder.status !== 'Cancelled' ? (
                 <>
                   <div className="delivery-tracker-container">
-                     <div className="tracker-line">
-                       <div className="tracker-line-progress" style={{ width: `${
-                         activeTrackingOrder.status === 'Confirmed' ? 0 :
-                         activeTrackingOrder.status === 'Preparing' ? 33 :
-                         activeTrackingOrder.status === 'Out for Delivery' ? 66 :
-                         activeTrackingOrder.status === 'Delivered' ? 100 : 0
-                       }%` }}></div>
-                     </div>
-                     {['Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'].map((step, idx) => {
-                        const statuses = ['Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'];
-                        const currentIdx = statuses.indexOf(activeTrackingOrder.status) >= 0 ? statuses.indexOf(activeTrackingOrder.status) : -1;
-                        let stepClass = 'pending';
-                        if (idx < currentIdx) stepClass = 'completed';
-                        if (idx === currentIdx) stepClass = 'active-pulse';
-                        return (
-                          <div key={step} className={`tracker-step ${stepClass}`}>
-                            <div className="step-icon">{['📝', '🍳', '🚚', '🏠'][idx]}</div>
-                            <span>{step}</span>
-                          </div>
-                        );
-                     })}
+                    <div className="tracker-line">
+                      <div className="tracker-line-progress" style={{
+                        '--tracker-progress': `${activeTrackingOrder.status === 'Confirmed' ? 0 :
+                            activeTrackingOrder.status === 'Preparing' ? 33 :
+                              activeTrackingOrder.status === 'Out for Delivery' ? 66 :
+                                activeTrackingOrder.status === 'Delivered' ? 100 : 0
+                          }%`
+                      }}></div>
+                    </div>
+                    {['Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'].map((step, idx) => {
+                      const statuses = ['Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'];
+                      const currentIdx = statuses.indexOf(activeTrackingOrder.status) >= 0 ? statuses.indexOf(activeTrackingOrder.status) : -1;
+                      let stepClass = 'pending';
+                      if (idx < currentIdx) stepClass = 'completed';
+                      if (idx === currentIdx) stepClass = 'active-pulse';
+                      return (
+                        <div key={step} className={`tracker-step ${stepClass}`}>
+                          <div className="step-icon">{['📝', '🍳', '🚚', '🏠'][idx]}</div>
+                          <span>{step}</span>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div className="delivery-details-box">
                     <div className="estimated-time">
                       <span className="time-icon">
                         {activeTrackingOrder.status === 'Confirmed' ? '📝' :
-                         activeTrackingOrder.status === 'Preparing' ? '🍳' :
-                         activeTrackingOrder.status === 'Out for Delivery' ? '⏱️' : '🏠'}
+                          activeTrackingOrder.status === 'Preparing' ? '🍳' :
+                            activeTrackingOrder.status === 'Out for Delivery' ? '⏱️' : '🏠'}
                       </span>
                       <strong>
                         {activeTrackingOrder.status === 'Confirmed' ? 'Order Confirmed — Prep starting soon' :
-                         activeTrackingOrder.status === 'Preparing' ? 'Preparing — Arriving in 30–40 mins' :
-                         activeTrackingOrder.status === 'Out for Delivery' ? 'Out for Delivery — Arriving in 10–15 mins' : 
-                         'Delivered successfully! Enjoy your meal! 🎉'}
+                          activeTrackingOrder.status === 'Preparing' ? 'Preparing — Arriving in 30–40 mins' :
+                            activeTrackingOrder.status === 'Out for Delivery' ? 'Out for Delivery — Arriving in 10–15 mins' :
+                              'Delivered successfully! Enjoy your meal! 🎉'}
                       </strong>
                     </div>
-                    
+
                     <div className="delivery-summary">
                       <h4>Order Summary</h4>
                       <div className="summary-items-list" style={{ margin: '8px 0 16px 0', borderBottom: '1px solid rgba(45, 27, 17, 0.08)', paddingBottom: '8px' }}>
@@ -1585,9 +1586,9 @@ function App() {
                   </div>
                 </>
               )}
-              
+
               <div className="delivery-actions">
-                <button 
+                <button
                   className="btn-back-home outline"
                   onClick={() => {
                     setView('home');
@@ -1617,15 +1618,15 @@ function App() {
               <div key={order.id} className="admin-order-card">
                 <div className="order-info">
                   <strong>ID: {order.id}</strong> | {order.customerName} ({order.customerPhone})
-                  <br/>
+                  <br />
                   <small>{new Date(order.timestamp).toLocaleString()}</small>
                 </div>
                 <div className="order-items">
                   Items: {order.items.length} | Total: Rs. {order.total}
                 </div>
                 <div className="order-status-control">
-                  <select 
-                    value={order.status} 
+                  <select
+                    value={order.status}
                     onChange={e => handleAdminStatusChange(order.id, e.target.value)}
                   >
                     <option value="Confirmed">Confirmed</option>

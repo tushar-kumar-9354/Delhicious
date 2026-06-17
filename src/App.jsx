@@ -1540,6 +1540,14 @@ function App() {
                     
                     <div className="delivery-summary">
                       <h4>Order Summary</h4>
+                      <div className="summary-items-list" style={{ margin: '8px 0 16px 0', borderBottom: '1px solid rgba(45, 27, 17, 0.08)', paddingBottom: '8px' }}>
+                        {activeTrackingOrder.items && activeTrackingOrder.items.map((item, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#6e5d54', padding: '4px 0' }}>
+                            <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
+                            <span style={{ fontWeight: '600' }}>Rs. {item.priceNum * item.quantity}/-</span>
+                          </div>
+                        ))}
+                      </div>
                       <p><strong>Total Items:</strong> {activeTrackingOrder.items.length}</p>
                       <p><strong>Amount Paid:</strong> Rs. {activeTrackingOrder.total}</p>
                       <p><strong>Delivering to:</strong> {activeTrackingOrder.address}</p>
@@ -1564,6 +1572,14 @@ function App() {
 
                   <div className="delivery-summary" style={{ textAlign: 'left', padding: '0 24px 20px 24px' }}>
                     <h4 style={{ marginBottom: '12px', color: '#2d1b11' }}>Order Summary</h4>
+                    <div className="summary-items-list" style={{ margin: '8px 0 16px 0', borderBottom: '1px solid rgba(45, 27, 17, 0.08)', paddingBottom: '8px' }}>
+                      {activeTrackingOrder.items && activeTrackingOrder.items.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#6e5d54', padding: '4px 0' }}>
+                          <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
+                          <span style={{ fontWeight: '600' }}>Rs. {item.priceNum * item.quantity}/-</span>
+                        </div>
+                      ))}
+                    </div>
                     <p style={{ fontSize: '0.95rem', color: '#6e5d54', margin: '4px 0' }}><strong>Total Items:</strong> {activeTrackingOrder.items.length}</p>
                     <p style={{ fontSize: '0.95rem', color: '#6e5d54', margin: '4px 0' }}><strong>Amount:</strong> Rs. {activeTrackingOrder.total}</p>
                   </div>

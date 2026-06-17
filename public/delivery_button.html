@@ -134,11 +134,203 @@
                 transform: scale(1);
             }
         }
+
+        /* Admin View Styles */
+        .admin-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 800px;
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(45, 27, 17, 0.1);
+            border: 1px solid rgba(45, 27, 17, 0.05);
+            padding: 40px;
+            animation: scaleUp 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #fff5f5;
+            padding-bottom: 20px;
+        }
+
+        .admin-title {
+            font-size: 1.8rem;
+            font-weight: 850;
+            color: #b32619;
+        }
+
+        .admin-subtitle {
+            font-size: 0.95rem;
+            color: #6e5d54;
+            margin-top: 4px;
+        }
+
+        .orders-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .order-card {
+            background: #fffcfb;
+            border: 1px solid #ffe5e5;
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 4px 15px rgba(45, 27, 17, 0.02);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-align: left;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(179, 38, 25, 0.06);
+        }
+
+        .order-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .order-id {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #2d1b11;
+        }
+
+        .order-date {
+            font-size: 0.85rem;
+            color: #6e5d54;
+        }
+
+        .order-customer {
+            font-size: 0.95rem;
+            color: #2d1b11;
+            line-height: 1.4;
+        }
+
+        .order-items {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(45, 27, 17, 0.04);
+        }
+
+        .order-item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #6e5d54;
+            padding: 6px 0;
+            border-bottom: 1px solid #fff5f5;
+        }
+
+        .order-item-row:last-child {
+            border-bottom: none;
+        }
+
+        .order-item-name {
+            font-weight: 600;
+            color: #2d1b11;
+        }
+
+        .order-total-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #2d1b11;
+            padding-top: 10px;
+            border-top: 1px dashed rgba(45, 27, 17, 0.1);
+        }
+
+        .order-total-price {
+            color: #b32619;
+        }
+
+        .order-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #fff5f5;
+        }
+
+        .status-select-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-select-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #6e5d54;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-dropdown {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid #e0d5ce;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #2d1b11;
+            background-color: #ffffff;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .status-dropdown:focus {
+            border-color: #b32619;
+        }
+
+        .no-orders-msg {
+            text-align: center;
+            padding: 40px;
+            color: #6e5d54;
+            font-size: 1.1rem;
+            font-style: italic;
+        }
+
+        .btn-view-site {
+            background-color: #2d1b11;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 9999px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px rgba(45, 27, 17, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .btn-view-site:hover {
+            background-color: #1a0f0a;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 
 <body>
-    <div class="preparing-card">
+    <div class="preparing-card" id="user-view">
         <div class="preparing-video-wrapper">
             <video src="/preparing.mp4" autoplay loop muted playsinline class="preparing-video"></video>
             <div class="preparing-video-badge">
@@ -147,15 +339,136 @@
         </div>
 
         <div class="preparing-content">
-            <div class="success-icon">🎉</div>
-            <h2 class="preparing-title">Order Placed Successfully!</h2>
+            <div class="success-icon">🚀</div>
+            <h2 class="preparing-title">Out for Delivery!</h2>
             <p class="preparing-text">
-                Your order is being prepared and will be delivered shortly. Till then, explore more options on our menu!
+                Your delicious meal is hot and on its way to your doorstep. Keep your phone nearby, our delivery partner will contact you shortly!
             </p>
 
-            <a href="/" class="btn-back-home">Back to Home Page</a>
+            <a href="/" class="btn-back-home" onclick="event.preventDefault(); window.location.replace('/');">Back to Home Page</a>
         </div>
     </div>
+
+    <div class="admin-container" id="admin-view" style="display: none;">
+        <div class="admin-header">
+            <div>
+                <h1 class="admin-title">Admin Portal</h1>
+                <div class="admin-subtitle">Manage customer orders and delivery status</div>
+            </div>
+            <a href="/" class="btn-view-site" onclick="event.preventDefault(); window.location.replace('/');">Go to Website</a>
+        </div>
+        <div class="orders-grid" id="orders-list">
+            <!-- Loaded dynamically via JS -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isAdmin = urlParams.get('admin') === 'true';
+
+            const userView = document.getElementById('user-view');
+            const adminView = document.getElementById('admin-view');
+
+            if (isAdmin) {
+                userView.style.display = 'none';
+                adminView.style.display = 'block';
+                loadAdminOrders();
+            }
+
+            function loadAdminOrders() {
+                const ordersListContainer = document.getElementById('orders-list');
+                const orders = JSON.parse(localStorage.getItem('delhicious_orders') || '[]');
+
+                if (orders.length === 0) {
+                    ordersListContainer.innerHTML = '<div class="no-orders-msg">No orders placed yet.</div>';
+                    return;
+                }
+
+                ordersListContainer.innerHTML = '';
+                // Display orders in reverse chronological order (newest first)
+                orders.slice().reverse().forEach(order => {
+                    const orderCard = document.createElement('div');
+                    orderCard.className = 'order-card';
+
+                    // Format date
+                    const orderDate = new Date(order.timestamp).toLocaleString();
+
+                    // Generate items HTML
+                    let itemsHtml = '';
+                    if (order.items && order.items.length > 0) {
+                        order.items.forEach(item => {
+                            itemsHtml += `
+                                <div class="order-item-row">
+                                    <span class="order-item-name">${item.name} ${item.size ? `(${item.size})` : ''}</span>
+                                    <span>Qty: ${item.quantity} | Rs. ${item.priceNum * item.quantity}</span>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        itemsHtml = '<div class="order-item-row">No items listed.</div>';
+                    }
+
+                    orderCard.innerHTML = `
+                        <div class="order-meta">
+                            <div>
+                                <span class="order-id">Order ID: #${order.id}</span>
+                                <div class="order-date">${orderDate}</div>
+                            </div>
+                            <div class="order-customer">
+                                <strong>Customer:</strong> ${order.customerName || 'N/A'}<br>
+                                <strong>Phone:</strong> ${order.customerPhone || 'N/A'}
+                            </div>
+                        </div>
+                        <div class="order-items">
+                            ${itemsHtml}
+                        </div>
+                        <div class="order-total-bar">
+                            <span>Total Amount</span>
+                            <span class="order-total-price">Rs. ${order.total || 0}/-</span>
+                        </div>
+                        <div class="order-controls">
+                            <div class="status-select-wrapper">
+                                <span class="status-select-label">Status:</span>
+                                <select class="status-dropdown" data-id="${order.id}">
+                                    <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                                    <option value="Preparing" ${order.status === 'Preparing' ? 'selected' : ''}>Preparing</option>
+                                    <option value="Out for Delivery" ${order.status === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
+                                    <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                                    <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+
+                    ordersListContainer.appendChild(orderCard);
+                });
+
+                // Attach change handlers to status dropdowns
+                document.querySelectorAll('.status-dropdown').forEach(dropdown => {
+                    dropdown.addEventListener('change', (e) => {
+                        const orderId = e.target.getAttribute('data-id');
+                        const newStatus = e.target.value;
+                        updateOrderStatus(orderId, newStatus);
+                    });
+                });
+            }
+
+            function updateOrderStatus(orderId, newStatus) {
+                const orders = JSON.parse(localStorage.getItem('delhicious_orders') || '[]');
+                const updatedOrders = orders.map(order => {
+                    if (order.id === orderId) {
+                        return { ...order, status: newStatus };
+                    }
+                    return order;
+                });
+                localStorage.setItem('delhicious_orders', JSON.stringify(updatedOrders));
+                
+                // Trigger storage event manually so other tabs/main app update in real-time
+                window.dispatchEvent(new Event('storage'));
+            }
+        });
+    </script>
 </body>
 
 </html>

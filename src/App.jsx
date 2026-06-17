@@ -419,7 +419,10 @@ function App() {
 
   const [firstPlaythroughDone, setFirstPlaythroughDone] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [view, setView] = useState('home'); // 'home' | 'menu' | 'preparing' | 'checkout'
+  const [view, setView] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('view') || 'home';
+  }); // 'home' | 'menu' | 'preparing' | 'checkout' | 'admin' | 'tracking'
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
   const [selectedSizes, setSelectedSizes] = useState({});
@@ -440,6 +443,7 @@ function App() {
   });
   const [trackingIdInput, setTrackingIdInput] = useState('');
   const [activeTrackingOrder, setActiveTrackingOrder] = useState(null);
+  const [matchingOrders, setMatchingOrders] = useState([]);
   
   useEffect(() => {
     const handleStorage = (e) => {
@@ -451,6 +455,23 @@ function App() {
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
+  useEffect(() => {
+    if (activeTrackingOrder) {
+      const currentOrder = orders.find(o => o.id === activeTrackingOrder.id);
+      if (currentOrder && currentOrder.status !== activeTrackingOrder.status) {
+        setActiveTrackingOrder(currentOrder);
+      }
+    }
+  }, [orders, activeTrackingOrder]);
+
+  useEffect(() => {
+    if (view !== 'tracking') {
+      setActiveTrackingOrder(null);
+      setMatchingOrders([]);
+      setTrackingIdInput('');
+    }
+  }, [view]);
 
   const MIN_TOTAL_MS = 4000; // Minimum 4s display time for loading video
 
@@ -756,12 +777,20 @@ function App() {
 
   const handleTrackOrderSubmit = (e) => {
     e.preventDefault();
-    const found = orders.find(o => o.id === trackingIdInput || o.customerPhone === trackingIdInput);
-    if (found) {
-      setActiveTrackingOrder(found);
+    const matches = orders.filter(o => o.id === trackingIdInput || o.customerPhone === trackingIdInput);
+    if (matches.length === 0) {
+      alert("Order not found. Please check your ID or Phone.");
+      return;
+    }
+    
+    if (matches.length === 1) {
+      setActiveTrackingOrder(matches[0]);
+      setMatchingOrders([]);
       setView('tracking');
     } else {
-      alert("Order not found. Please check your ID or Phone.");
+      setMatchingOrders(matches);
+      setActiveTrackingOrder(null);
+      setView('tracking');
     }
   };
 
@@ -1043,50 +1072,58 @@ function App() {
                   </div>
                   
                   <div className="contact-grid redesigned-contact-grid">
-                    <div className="contact-card info-card map-card">
-                      <div className="card-icon">📍</div>
-                      <h3>Address</h3>
-                      <p>Shop No. 2, Behind Chattarpur Bus Stop,</p>
-                      <p>New Delhi - 110074</p>
-                      <div className="map-embed" style={{ marginTop: '15px' }}>
-                        <iframe 
-                          title="Delhicious Location"
-                          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14022.06240763953!2d77.1685!3d28.5005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390ce3d6a36f7347%3A0xcf64585642ea80bb!2sChhatarpur%2C%20New%20Delhi%2C%20Delhi!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin" 
-                          width="100%" 
-                          height="180" 
-                          style={{ border: 0, borderRadius: '16px' }} 
-                          allowFullScreen="" 
-                          loading="lazy" 
-                          referrerPolicy="no-referrer-when-downgrade">
-                        </iframe>
+                    <div className="contact-info-list">
+                      <div className="contact-info-item">
+                        <div className="contact-info-icon">📞</div>
+                        <div className="contact-info-text">
+                          <h4>Call for Orders</h4>
+                          <p>
+                            <a href="tel:9310515739" className="contact-phone-link">9310515739</a>,{' '}
+                            <a href="tel:9891737297" className="contact-phone-link">9891737297</a>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="contact-info-item">
+                        <div className="contact-info-icon">📍</div>
+                        <div className="contact-info-text">
+                          <h4>Visit Us</h4>
+                          <p>A-11, Ambedkar Colony, Andheria More, Chhatarpur, New Delhi</p>
+                        </div>
+                      </div>
+
+                      <div className="contact-info-item">
+                        <div className="contact-info-icon">🚚</div>
+                        <div className="contact-info-text">
+                          <h4>Delivery Info</h4>
+                          <p><strong>FREE HOME DELIVERY</strong> above Rs. 300/- (Up to 3 Km radius)</p>
+                        </div>
+                      </div>
+
+                      <div className="contact-info-item">
+                        <div className="contact-info-icon">📱</div>
+                        <div className="contact-info-text">
+                          <h4>Order Online</h4>
+                          <p>Find us on your favorite food apps:</p>
+                          <div className="contact-app-links">
+                            <a href="#" className="app-badge zomato">Zomato</a>
+                            <a href="#" className="app-badge swiggy">Swiggy</a>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="contact-info-column">
-                      <div className="contact-card info-card">
-                        <div className="card-icon">📞</div>
-                        <h3>Call for Orders</h3>
-                        <p><a href="tel:9310515739" className="contact-link"><strong>9310515739</strong></a></p>
-                        <p><a href="tel:9891737297" className="contact-link"><strong>9891737297</strong></a></p>
-                      </div>
-
-                      <div className="contact-card info-card delivery-card-info">
-                        <div className="card-icon">🚚</div>
-                        <h3>Delivery Info</h3>
-                        <div className="highlight-badge">FREE HOME DELIVERY</div>
-                        <p>Minimum Order: <strong>Rs. 300/-</strong></p>
-                        <p>Delivery Coverage: Up to 3 Km radius</p>
-                      </div>
-
-                      <div className="contact-card info-card">
-                        <div className="card-icon">📱</div>
-                        <h3>Order Online</h3>
-                        <p>Find us on your favorite food apps:</p>
-                        <div className="online-apps">
-                          <a href="#" className="app-badge zomato">Zomato</a>
-                          <a href="#" className="app-badge swiggy">Swiggy</a>
-                        </div>
-                      </div>
+                    <div className="contact-map-container">
+                      <iframe 
+                        title="Delhicious Location"
+                        src="https://maps.google.com/maps?q=A-11,%20Ambedkar%20Colony,%20Andheria%20More,%20Chhatarpur,%20New%20Delhi&t=&z=16&ie=UTF8&iwloc=&output=embed" 
+                        width="100%" 
+                        height="100%" 
+                        style={{ border: 0, minHeight: '320px', display: 'block' }} 
+                        allowFullScreen="" 
+                        loading="lazy" 
+                        referrerPolicy="no-referrer-when-downgrade">
+                      </iframe>
                     </div>
                   </div>
                 </div>
@@ -1094,11 +1131,26 @@ function App() {
 
               {/* Footer with VintushTech credits */}
               <footer className="app-footer">
-                <div className="footer-bottom">
-                  <p>&copy; {new Date().getFullYear()} DELHICIOUS PIZZA CORNER. All Rights Reserved. | 🟢 100% Vegetarian</p>
-                  <div className="developer-credits">
-                    Visit <a href="https://vintushtech.cloud//?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGntJTsRgOzJplmkc8OgLwhRw2wqwQWI2w3QfviiEJIw3Fjkd07yk4Bs22UrNU_aem_6YUNcojj5Cq1ply2eUr76A" target="_blank" rel="noopener noreferrer">VintushTech</a> for a smarter, scalable, and better digital future.
-                    <button style={{ marginLeft: '10px', background: 'none', border: 'none', color: '#ab9e96', cursor: 'pointer', fontSize: '0.8rem' }} onClick={() => setView('admin')}>Admin</button>
+                <div className="footer-container">
+                  <div className="footer-col brand-col">
+                    <h3>delhicious <VegIcon /></h3>
+                    <p>100% Pure Vegetarian kitchen serving delicious pizzas, burgers, and snacks in New Delhi.</p>
+                  </div>
+                  <div className="footer-col links-col">
+                    <h4>Quick Links</h4>
+                    <div className="footer-links-grid">
+                      <button onClick={() => handleNavigate('home')}>Home</button>
+                      <button onClick={() => handleNavigate('menu')}>Menu</button>
+                      <button onClick={() => { setView('tracking'); setActiveTrackingOrder(null); }}>Track Order</button>
+                      <button onClick={() => handleNavigate('home', 'about')}>About Us</button>
+                    </div>
+                  </div>
+                  <div className="footer-col info-col">
+                    <h4>Developed By</h4>
+                    <p className="developer-credits">
+                      Visit <a href="https://vintushtech.cloud//?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGntJTsRgOzJplmkc8OgLwhRw2wqwQWI2w3QfviiEJIw3Fjkd07yk4Bs22UrNU_aem_6YUNcojj5Cq1ply2eUr76A" target="_blank" rel="noopener noreferrer">VintushTech</a> for a smarter, scalable digital future.
+                    </p>
+                    <p className="copyright-text">&copy; {new Date().getFullYear()} DELHICIOUS. All Rights Reserved.</p>
                   </div>
                 </div>
               </footer>
@@ -1216,13 +1268,22 @@ function App() {
               <p>{getCartItemCount()} items | Total: Rs. {getCartTotal()}</p>
             </div>
             <form className="checkout-form" onSubmit={handleCheckoutSubmit}>
-              <div className="form-group-full">
-                <label>Full Name</label>
-                <input type="text" placeholder="John Doe" required />
-              </div>
-              <div className="form-group-full">
-                <label>Phone Number</label>
-                <input type="tel" placeholder="+91 9876543210" required />
+              <div className="form-row">
+                <div className="form-group-half">
+                  <label>Full Name</label>
+                  <input type="text" placeholder="John Doe" required />
+                </div>
+                <div className="form-group-half">
+                  <label>Phone Number</label>
+                  <input 
+                    type="tel" 
+                    placeholder="e.g. 9876543210" 
+                    pattern="[0-9]{10}" 
+                    maxLength="10" 
+                    title="Please enter exactly 10 digits" 
+                    required 
+                  />
+                </div>
               </div>
               <div className="form-group-full">
                 <label>Email Address <span className="optional">(Optional)</span></label>
@@ -1331,8 +1392,12 @@ function App() {
       {/* Tracking View & Form */}
       {view === 'tracking' && (
         <div className="preparing-overlay-container">
-          {!activeTrackingOrder ? (
+          {!activeTrackingOrder && matchingOrders.length === 0 ? (
             <div className="delivery-card animate-scale-up" style={{ maxWidth: '400px' }}>
+              <div className="delivery-card-video-wrapper" style={{ margin: '-40px -40px 25px -40px', height: '200px', overflow: 'hidden' }}>
+                <video src="/hero_animation.mp4" autoPlay loop muted playsInline className="delivery-card-video"></video>
+                <div className="delivery-card-video-badge">🔍 Live Tracker</div>
+              </div>
               <h2>Track Your Order</h2>
               <form onSubmit={handleTrackOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
                 <input 
@@ -1347,44 +1412,163 @@ function App() {
                 <button type="button" className="btn-cancel" onClick={() => setView('home')}>Cancel</button>
               </form>
             </div>
+          ) : !activeTrackingOrder && matchingOrders.length > 0 ? (
+            <div className="delivery-card animate-scale-up" style={{ maxWidth: '500px' }}>
+              <h2>Select Order to Track</h2>
+              <p style={{ color: '#6e5d54', marginBottom: '20px' }}>Multiple orders found for this phone number. Please choose one:</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
+                {matchingOrders.slice().reverse().map(order => (
+                  <div 
+                    key={order.id} 
+                    onClick={() => setActiveTrackingOrder(order)}
+                    style={{ 
+                      padding: '16px', 
+                      borderRadius: '12px', 
+                      border: '1px solid rgba(45, 27, 17, 0.1)', 
+                      backgroundColor: '#fffcfb', 
+                      cursor: 'pointer', 
+                      transition: 'all 0.2s', 
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = '#b32619';
+                      e.currentTarget.style.backgroundColor = '#fff5f5';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'rgba(45, 27, 17, 0.1)';
+                      e.currentTarget.style.backgroundColor = '#fffcfb';
+                    }}
+                  >
+                    <div>
+                      <strong style={{ color: '#2d1b11' }}>Order ID: #{order.id}</strong>
+                      <div style={{ fontSize: '0.8rem', color: '#ab9e96', marginTop: '4px' }}>
+                        {new Date(order.timestamp).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: '0.9rem', color: '#6e5d54', marginTop: '4px' }}>
+                        Items: {order.items ? order.items.length : 0} | Total: Rs. {order.total}
+                      </div>
+                    </div>
+                    <span 
+                      style={{ 
+                        padding: '6px 12px', 
+                        borderRadius: '20px', 
+                        fontSize: '0.8rem', 
+                        fontWeight: '700',
+                        backgroundColor: order.status === 'Cancelled' ? '#ffe5e5' : '#e6f6f0',
+                        color: order.status === 'Cancelled' ? '#b32619' : '#0f8a5f'
+                      }}
+                    >
+                      {order.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                <button 
+                  className="btn-cancel" 
+                  onClick={() => { setMatchingOrders([]); }} 
+                  style={{ flex: 1, padding: '12px', borderRadius: '10px', fontSize: '0.95rem' }}
+                >
+                  Back to Search
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="delivery-card animate-scale-up">
+              {(activeTrackingOrder.status === 'Preparing' || activeTrackingOrder.status === 'Out for Delivery') && (
+                <div className="delivery-card-video-wrapper">
+                  <video src="/preparing.mp4" autoPlay loop muted playsInline className="delivery-card-video"></video>
+                  <div className="delivery-card-video-badge">
+                    {activeTrackingOrder.status === 'Preparing' ? '🍳 Preparing Order' : '🚚 Out for Delivery'}
+                  </div>
+                </div>
+              )}
               <div className="delivery-header">
-                <div className="success-icon">🎉</div>
+                {!(activeTrackingOrder.status === 'Preparing' || activeTrackingOrder.status === 'Out for Delivery') && (
+                  <div className="success-icon" style={{ color: activeTrackingOrder.status === 'Cancelled' ? '#b32619' : 'inherit' }}>
+                    {activeTrackingOrder.status === 'Delivered' ? '✅' : 
+                     activeTrackingOrder.status === 'Cancelled' ? '❌' : '🎉'}
+                  </div>
+                )}
                 <h2 className="preparing-title">Order ID: {activeTrackingOrder.id}</h2>
-                <p className="preparing-text">Current Status: <strong>{activeTrackingOrder.status}</strong></p>
+                <p className="preparing-text">Current Status: <strong style={{ color: activeTrackingOrder.status === 'Cancelled' ? '#b32619' : 'inherit' }}>{activeTrackingOrder.status}</strong></p>
               </div>
               
-              <div className="delivery-tracker-container">
-                 <div className="tracker-line"></div>
-                 {['Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'].map((step, idx) => {
-                    const statuses = ['Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'];
-                    const currentIdx = statuses.indexOf(activeTrackingOrder.status) >= 0 ? statuses.indexOf(activeTrackingOrder.status) : -1;
-                    let stepClass = 'pending';
-                    if (idx < currentIdx) stepClass = 'completed';
-                    if (idx === currentIdx) stepClass = 'active-pulse';
-                    return (
-                      <div key={step} className={`tracker-step ${stepClass}`}>
-                        <div className="step-icon">{['📝', '🍳', '🚚', '🏠'][idx]}</div>
-                        <span>{step}</span>
-                      </div>
-                    );
-                 })}
-              </div>
+              {activeTrackingOrder.status !== 'Cancelled' ? (
+                <>
+                  <div className="delivery-tracker-container">
+                     <div className="tracker-line">
+                       <div className="tracker-line-progress" style={{ width: `${
+                         activeTrackingOrder.status === 'Confirmed' ? 0 :
+                         activeTrackingOrder.status === 'Preparing' ? 33 :
+                         activeTrackingOrder.status === 'Out for Delivery' ? 66 :
+                         activeTrackingOrder.status === 'Delivered' ? 100 : 0
+                       }%` }}></div>
+                     </div>
+                     {['Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'].map((step, idx) => {
+                        const statuses = ['Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'];
+                        const currentIdx = statuses.indexOf(activeTrackingOrder.status) >= 0 ? statuses.indexOf(activeTrackingOrder.status) : -1;
+                        let stepClass = 'pending';
+                        if (idx < currentIdx) stepClass = 'completed';
+                        if (idx === currentIdx) stepClass = 'active-pulse';
+                        return (
+                          <div key={step} className={`tracker-step ${stepClass}`}>
+                            <div className="step-icon">{['📝', '🍳', '🚚', '🏠'][idx]}</div>
+                            <span>{step}</span>
+                          </div>
+                        );
+                     })}
+                  </div>
 
-              <div className="delivery-details-box">
-                <div className="estimated-time">
-                  <span className="time-icon">⏱️</span>
-                  <strong>Arriving in 25–30 mins</strong>
-                </div>
-                
-                <div className="delivery-summary">
-                  <h4>Order Summary</h4>
-                  <p><strong>Total Items:</strong> {activeTrackingOrder.items.length}</p>
-                  <p><strong>Amount Paid:</strong> Rs. {activeTrackingOrder.total}</p>
-                  <p><strong>Delivering to:</strong> {activeTrackingOrder.address}</p>
-                </div>
-              </div>
+                  <div className="delivery-details-box">
+                    <div className="estimated-time">
+                      <span className="time-icon">
+                        {activeTrackingOrder.status === 'Confirmed' ? '📝' :
+                         activeTrackingOrder.status === 'Preparing' ? '🍳' :
+                         activeTrackingOrder.status === 'Out for Delivery' ? '⏱️' : '🏠'}
+                      </span>
+                      <strong>
+                        {activeTrackingOrder.status === 'Confirmed' ? 'Order Confirmed — Prep starting soon' :
+                         activeTrackingOrder.status === 'Preparing' ? 'Preparing — Arriving in 30–40 mins' :
+                         activeTrackingOrder.status === 'Out for Delivery' ? 'Out for Delivery — Arriving in 10–15 mins' : 
+                         'Delivered successfully! Enjoy your meal! 🎉'}
+                      </strong>
+                    </div>
+                    
+                    <div className="delivery-summary">
+                      <h4>Order Summary</h4>
+                      <p><strong>Total Items:</strong> {activeTrackingOrder.items.length}</p>
+                      <p><strong>Amount Paid:</strong> Rs. {activeTrackingOrder.total}</p>
+                      <p><strong>Delivering to:</strong> {activeTrackingOrder.address}</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="delivery-details-box" style={{ borderColor: 'rgba(179, 38, 25, 0.2)', backgroundColor: '#fff5f5' }}>
+                    <div className="estimated-time" style={{ color: '#b32619', borderColor: 'rgba(179, 38, 25, 0.1)' }}>
+                      <span className="time-icon">❌</span>
+                      <strong>This order has been cancelled</strong>
+                    </div>
+                    <p style={{ fontSize: '0.95rem', color: '#6e5d54', lineHeight: '1.5', marginBottom: '15px' }}>
+                      We regret to inform you that your order has been cancelled. If this was unexpected or if you have questions regarding a refund, please reach out to us:
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: '#ffffff', borderRadius: '12px', border: '1px solid rgba(179, 38, 25, 0.1)' }}>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#2d1b11' }}>📞 Call: <strong>9310515739</strong> or <strong>9891737297</strong></p>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#2d1b11' }}>📍 A-11, Ambedkar Colony, Andheria More, Chhatarpur, New Delhi</p>
+                    </div>
+                  </div>
+
+                  <div className="delivery-summary" style={{ textAlign: 'left', padding: '0 24px 20px 24px' }}>
+                    <h4 style={{ marginBottom: '12px', color: '#2d1b11' }}>Order Summary</h4>
+                    <p style={{ fontSize: '0.95rem', color: '#6e5d54', margin: '4px 0' }}><strong>Total Items:</strong> {activeTrackingOrder.items.length}</p>
+                    <p style={{ fontSize: '0.95rem', color: '#6e5d54', margin: '4px 0' }}><strong>Amount:</strong> Rs. {activeTrackingOrder.total}</p>
+                  </div>
+                </>
+              )}
               
               <div className="delivery-actions">
                 <button 
@@ -1407,7 +1591,10 @@ function App() {
         <div className="admin-dashboard-container animate-scale-up">
           <div className="admin-header">
             <h2>Admin Dashboard</h2>
-            <button className="btn-cancel" onClick={() => setView('home')}>Exit</button>
+            <button className="btn-cancel" onClick={() => {
+              window.history.replaceState({}, document.title, window.location.pathname);
+              setView('home');
+            }}>Exit</button>
           </div>
           <div className="admin-orders-list">
             {orders.length === 0 ? <p>No orders found.</p> : orders.map(order => (

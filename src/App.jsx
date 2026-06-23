@@ -1419,7 +1419,9 @@ function App() {
                   <div className="toast-icon">✅</div>
                   <div className="toast-content">
                     <h3>Payment Successful!</h3>
-                    <p>Redirecting to tracker...</p>
+                    <p>Your delicious order has been confirmed</p>
+                    <div className="success-badge">🚀 Order Received</div>
+                    <p style={{ fontSize: '0.85rem', color: '#999', marginTop: '8px' }}>Redirecting to tracker...</p>
                   </div>
                 </div>
               )}

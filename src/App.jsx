@@ -450,6 +450,17 @@ function App() {
   const [activeTrackingOrder, setActiveTrackingOrder] = useState(null);
   const [matchingOrders, setMatchingOrders] = useState([]);
 
+  // User Verification States for Tracking
+  const [trackingVerificationStep, setTrackingVerificationStep] = useState('initial'); // 'initial' | 'verify' | 'otp' | 'success'
+  const [trackingUserPhone, setTrackingUserPhone] = useState('');
+  const [trackingUserName, setTrackingUserName] = useState('');
+  const [trackingOTP, setTrackingOTP] = useState('');
+  const [trackingGeneratedOTP, setTrackingGeneratedOTP] = useState('');
+  const [trackingOTPExpiry, setTrackingOTPExpiry] = useState(null);
+  const [trackingVerifiedPhone, setTrackingVerifiedPhone] = useState('');
+  const [trackingVerifiedName, setTrackingVerifiedName] = useState('');
+  const [trackingOTPAttempts, setTrackingOTPAttempts] = useState(0);
+
   useEffect(() => {
     const handleStorage = (e) => {
       if (e.key === 'delhicious_orders') {
@@ -475,6 +486,13 @@ function App() {
       setActiveTrackingOrder(null);
       setMatchingOrders([]);
       setTrackingIdInput('');
+      setTrackingVerificationStep('initial');
+      setTrackingUserPhone('');
+      setTrackingUserName('');
+      setTrackingOTP('');
+      setTrackingGeneratedOTP('');
+      setTrackingVerifiedPhone('');
+      setTrackingVerifiedName('');
     }
   }, [view]);
 
@@ -924,18 +942,146 @@ function App() {
     }
   };
 
+  // OTP Verification Functions for Tracking
+  const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const handleTrackingVerifyPhoneAndName = (e) => {
+    e.preventDefault();
+    if (!trackingUserPhone || !trackingUserName) {
+      alert('Please enter both phone number (last 4 digits) and name');
+      return;
+    }
+
+    // Validate phone (should be 4 digits)
+    if (trackingUserPhone.length !== 4 || !/^\d+$/.test(trackingUserPhone)) {
+      alert('Please enter the last 4 digits of your phone number');
+      return;
+    }
+
+    // Check if any order matches this phone + name combination
+    const hasMatchingOrder = orders.some(o => 
+      o.customerPhone && o.customerPhone.slice(-4) === trackingUserPhone && 
+      o.customerName && o.customerName.toLowerCase() === trackingUserName.toLowerCase()
+    );
+
+    if (!hasMatchingOrder) {
+      alert('No orders found with this phone number and name combination');
+      return;
+    }
+
+    // Store verified user info
+    setTrackingVerifiedPhone(trackingUserPhone);
+    setTrackingVerifiedName(trackingUserName);
+    setTrackingVerificationStep('success');
+  };
+
+  const handleTrackingSendOTP = (e) => {
+    e.preventDefault();
+    if (!trackingUserPhone) {
+      alert('Please enter the last 4 digits of your phone number');
+      return;
+    }
+
+    if (trackingUserPhone.length !== 4 || !/^\d+$/.test(trackingUserPhone)) {
+      alert('Please enter exactly 4 digits');
+      return;
+    }
+
+    // Check if any order matches this phone
+    const hasMatchingOrder = orders.some(o => 
+      o.customerPhone && o.customerPhone.slice(-4) === trackingUserPhone
+    );
+
+    if (!hasMatchingOrder) {
+      alert('No orders found with this phone number');
+      return;
+    }
+
+    // Generate OTP and set expiry (5 minutes)
+    const newOTP = generateOTP();
+    setTrackingGeneratedOTP(newOTP);
+    setTrackingOTPExpiry(Date.now() + 5 * 60 * 1000);
+    setTrackingOTPAttempts(0);
+    setTrackingVerificationStep('otp');
+    
+    // Show OTP to user (in production, this would be sent via SMS)
+    alert(`OTP sent to phone ending in ${trackingUserPhone}\n\nDemo OTP: ${newOTP}\n(Valid for 5 minutes)`);
+  };
+
+  const handleTrackingVerifyOTP = (e) => {
+    e.preventDefault();
+    if (!trackingOTP) {
+      alert('Please enter the OTP');
+      return;
+    }
+
+    // Check if OTP is expired
+    if (Date.now() > trackingOTPExpiry) {
+      alert('OTP has expired. Please request a new one.');
+      setTrackingOTP('');
+      setTrackingVerificationStep('initial');
+      return;
+    }
+
+    // Verify OTP
+    if (trackingOTP === trackingGeneratedOTP) {
+      setTrackingVerifiedPhone(trackingUserPhone);
+      setTrackingVerificationStep('success');
+    } else {
+      const newAttempts = trackingOTPAttempts + 1;
+      setTrackingOTPAttempts(newAttempts);
+      
+      if (newAttempts >= 3) {
+        alert('Maximum OTP attempts exceeded. Please request a new OTP.');
+        setTrackingOTP('');
+        setTrackingUserPhone('');
+        setTrackingVerificationStep('initial');
+      } else {
+        alert(`Incorrect OTP. ${3 - newAttempts} attempts remaining.`);
+        setTrackingOTP('');
+      }
+    }
+  };
+
+  const handleTrackingReset = () => {
+    setTrackingVerificationStep('initial');
+    setTrackingUserPhone('');
+    setTrackingUserName('');
+    setTrackingOTP('');
+    setTrackingGeneratedOTP('');
+    setTrackingOTPExpiry(null);
+    setTrackingVerifiedPhone('');
+    setTrackingVerifiedName('');
+    setTrackingOTPAttempts(0);
+    setActiveTrackingOrder(null);
+    setMatchingOrders([]);
+    setTrackingIdInput('');
+  };
+
   const handleTrackOrderSubmit = (e) => {
     e.preventDefault();
-    const matches = orders.filter(o => o.id === trackingIdInput || o.customerPhone === trackingIdInput);
+    
+    // Filter orders only for the verified user
+    let matches = [];
+    
+    if (trackingVerificationStep === 'success') {
+      // Filter by verified user's phone (last 4 digits) and name
+      matches = orders.filter(o => 
+        o.customerPhone && o.customerPhone.slice(-4) === trackingVerifiedPhone && 
+        o.customerName && o.customerName.toLowerCase() === trackingVerifiedName.toLowerCase()
+      );
+    }
+    
     if (matches.length === 0) {
-      alert("Order not found. Please check your ID or Phone.");
+      alert("No orders found for your account.");
       return;
     }
 
     if (matches.length === 1) {
       setActiveTrackingOrder(matches[0]);
       setMatchingOrders([]);
-      setView('tracking');
     } else {
       setMatchingOrders(matches);
       setActiveTrackingOrder(null);
@@ -1561,25 +1707,242 @@ function App() {
       {/* Tracking View & Form */}
       {view === 'tracking' && (
         <div className="preparing-overlay-container">
-          {!activeTrackingOrder && matchingOrders.length === 0 ? (
-            <div className="delivery-card animate-scale-up" style={{ maxWidth: '400px' }}>
-              <div className="delivery-card-video-wrapper" style={{ margin: '-40px -40px 25px -40px', height: '200px', overflow: 'hidden' }}>
+          {trackingVerificationStep === 'initial' ? (
+            // Initial verification selection
+            <div className="delivery-card animate-scale-up" style={{ maxWidth: '450px' }}>
+              <div className="tracking-initial-video-wrapper">
                 <video src="/hero_animation.mp4" autoPlay loop muted playsInline className="delivery-card-video"></video>
                 <div className="delivery-card-video-badge">🔍 Live Tracker</div>
               </div>
               <h2>Track Your Order</h2>
-              <form onSubmit={handleTrackOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
-                <input
-                  type="text"
-                  placeholder="Enter Order ID or Phone"
-                  value={trackingIdInput}
-                  onChange={e => setTrackingIdInput(e.target.value)}
-                  required
-                  style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'inherit' }}
-                />
-                <button type="submit" className="btn-pay-now">Track Now</button>
-                <button type="button" className="btn-cancel" onClick={() => setView('home')}>Cancel</button>
+              <p style={{ color: '#6e5d54', marginBottom: '20px', fontSize: '0.95rem', textAlign: 'center' }}>
+                For your security, please verify your identity to view your orders.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
+                <button
+                  onClick={() => setTrackingVerificationStep('verify')}
+                  className="btn-pay-now"
+                  style={{ width: '100%', padding: '14px', borderRadius: '10px' }}
+                >
+                  📱 Verify with Phone & Name
+                </button>
+                <button
+                  onClick={() => setTrackingVerificationStep('otp-request')}
+                  className="btn-pay-now"
+                  style={{ width: '100%', padding: '14px', borderRadius: '10px', backgroundColor: '#6e5d54' }}
+                >
+                  🔐 Send OTP to Phone
+                </button>
+                <button
+                  onClick={() => { setView('home'); handleTrackingReset(); }}
+                  className="btn-cancel"
+                  style={{ width: '100%', padding: '12px', borderRadius: '10px' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : trackingVerificationStep === 'verify' ? (
+            // Phone & Name verification form
+            <div className="delivery-card animate-scale-up" style={{ maxWidth: '400px' }}>
+              <h2>Verify Your Identity</h2>
+              <p style={{ color: '#6e5d54', marginBottom: '20px', fontSize: '0.9rem' }}>
+                Enter the last 4 digits of your phone number and your name to access your orders.
+              </p>
+              <form onSubmit={handleTrackingVerifyPhoneAndName} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: '600', color: '#2d1b11' }}>
+                    Last 4 Digits of Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., 1234"
+                    value={trackingUserPhone}
+                    onChange={e => setTrackingUserPhone(e.target.value.slice(0, 4))}
+                    maxLength="4"
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'inherit', width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: '600', color: '#2d1b11' }}>
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., John Doe"
+                    value={trackingUserName}
+                    onChange={e => setTrackingUserName(e.target.value)}
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'inherit', width: '100%' }}
+                  />
+                </div>
+                <button type="submit" className="btn-pay-now" style={{ marginTop: '8px' }}>
+                  Verify
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setTrackingVerificationStep('initial'); setTrackingUserPhone(''); setTrackingUserName(''); }}
+                  className="btn-cancel"
+                >
+                  Back
+                </button>
               </form>
+            </div>
+          ) : trackingVerificationStep === 'otp-request' ? (
+            // OTP request form
+            <div className="delivery-card animate-scale-up" style={{ maxWidth: '400px' }}>
+              <h2>Send OTP</h2>
+              <p style={{ color: '#6e5d54', marginBottom: '20px', fontSize: '0.9rem' }}>
+                Enter the last 4 digits of your phone number to receive an OTP.
+              </p>
+              <form onSubmit={handleTrackingSendOTP} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: '600', color: '#2d1b11' }}>
+                    Last 4 Digits of Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., 1234"
+                    value={trackingUserPhone}
+                    onChange={e => setTrackingUserPhone(e.target.value.slice(0, 4))}
+                    maxLength="4"
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'inherit', width: '100%' }}
+                  />
+                </div>
+                <button type="submit" className="btn-pay-now">
+                  Send OTP
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setTrackingVerificationStep('initial'); setTrackingUserPhone(''); }}
+                  className="btn-cancel"
+                >
+                  Back
+                </button>
+              </form>
+            </div>
+          ) : trackingVerificationStep === 'otp' ? (
+            // OTP verification form
+            <div className="delivery-card animate-scale-up" style={{ maxWidth: '400px' }}>
+              <h2>Enter OTP</h2>
+              <p style={{ color: '#6e5d54', marginBottom: '20px', fontSize: '0.9rem' }}>
+                We've sent an OTP to your phone ending in {trackingUserPhone}. This OTP will expire in 5 minutes.
+              </p>
+              <form onSubmit={handleTrackingVerifyOTP} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: '600', color: '#2d1b11' }}>
+                    Enter 6-Digit OTP
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="000000"
+                    value={trackingOTP}
+                    onChange={e => setTrackingOTP(e.target.value.slice(0, 6))}
+                    maxLength="6"
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'inherit', width: '100%', fontSize: '1.2rem', letterSpacing: '4px' }}
+                  />
+                </div>
+                {trackingOTPAttempts > 0 && (
+                  <p style={{ fontSize: '0.85rem', color: '#b32619', margin: '0' }}>
+                    {3 - trackingOTPAttempts} attempts remaining
+                  </p>
+                )}
+                <button type="submit" className="btn-pay-now">
+                  Verify OTP
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setTrackingVerificationStep('otp-request'); setTrackingOTP(''); setTrackingUserPhone(''); setTrackingOTPAttempts(0); }}
+                  className="btn-cancel"
+                >
+                  Back
+                </button>
+              </form>
+            </div>
+          ) : trackingVerificationStep === 'success' && !activeTrackingOrder && matchingOrders.length === 0 ? (
+            // Show orders list after verification
+            <div className="delivery-card animate-scale-up" style={{ maxWidth: '500px' }}>
+              <div className="tracking-initial-video-wrapper">
+                <video src="/hero_animation.mp4" autoPlay loop muted playsInline className="delivery-card-video"></video>
+                <div className="delivery-card-video-badge">🔍 Your Orders</div>
+              </div>
+              <h2>Your Orders</h2>
+              <p style={{ color: '#6e5d54', marginBottom: '20px', fontSize: '0.95rem' }}>
+                Select an order to track its status:
+              </p>
+              {(() => {
+                const userOrders = orders.filter(o => 
+                  o.customerPhone && o.customerPhone.slice(-4) === trackingVerifiedPhone && 
+                  o.customerName && o.customerName.toLowerCase() === trackingVerifiedName.toLowerCase()
+                ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                return userOrders.length === 0 ? (
+                  <p style={{ color: '#6e5d54', textAlign: 'center', padding: '20px' }}>No orders found.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {userOrders.map(order => (
+                      <div
+                        key={order.id}
+                        onClick={() => { setActiveTrackingOrder(order); handleTrackOrderSubmit({ preventDefault: () => {} }); }}
+                        style={{
+                          padding: '16px',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(45, 27, 17, 0.1)',
+                          backgroundColor: '#fffcfb',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          textAlign: 'left',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = '#b32619';
+                          e.currentTarget.style.backgroundColor = '#fff5f5';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = 'rgba(45, 27, 17, 0.1)';
+                          e.currentTarget.style.backgroundColor = '#fffcfb';
+                        }}
+                      >
+                        <div>
+                          <strong style={{ color: '#2d1b11' }}>Order #{order.id}</strong>
+                          <div style={{ fontSize: '0.8rem', color: '#ab9e96', marginTop: '4px' }}>
+                            {new Date(order.timestamp).toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: '#6e5d54', marginTop: '4px' }}>
+                            Items: {order.items ? order.items.length : 0} | Rs. {order.total}
+                          </div>
+                        </div>
+                        <span
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            fontSize: '0.8rem',
+                            fontWeight: '700',
+                            backgroundColor: order.status === 'Cancelled' ? '#ffe5e5' : '#e6f6f0',
+                            color: order.status === 'Cancelled' ? '#b32619' : '#0f8a5f'
+                          }}
+                        >
+                          {order.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+              <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                <button
+                  className="btn-cancel"
+                  onClick={handleTrackingReset}
+                  style={{ flex: 1, padding: '12px', borderRadius: '10px', fontSize: '0.95rem' }}
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           ) : !activeTrackingOrder && matchingOrders.length > 0 ? (
             <div className="delivery-card animate-scale-up" style={{ maxWidth: '500px' }}>

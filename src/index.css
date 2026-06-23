@@ -2801,9 +2801,27 @@ textarea {
 @media (max-width: 600px) {
     .delivery-card-video-wrapper {
         width: calc(100% + 40px);
-        height: 180px;
-        margin: -20px -20px 20px -20px;
+        height: 150px;
+        margin: -20px -20px 15px -20px;
         border-radius: 16px 16px 0 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .delivery-card-video-wrapper {
+        width: 100%;
+        height: 120px;
+        margin: 0 0 12px 0;
+        border-radius: 12px 12px 0 0;
+    }
+}
+
+@media (max-width: 360px) {
+    .delivery-card-video-wrapper {
+        width: 100%;
+        height: 100px;
+        margin: 0 0 12px 0;
+        border-radius: 10px 10px 0 0;
     }
 }
 
@@ -2812,6 +2830,51 @@ textarea {
     height: 100%;
     object-fit: cover;
 }
+
+.tracking-initial-video-wrapper {
+    position: relative;
+    width: calc(100% + 80px);
+    height: 200px;
+    margin: -40px -40px 25px -40px;
+    overflow: hidden;
+    border-radius: 20px 20px 0 0;
+}
+
+@media (max-width: 768px) {
+    .tracking-initial-video-wrapper {
+        width: calc(100% + 60px);
+        height: 180px;
+        margin: -30px -30px 20px -30px;
+    }
+}
+
+@media (max-width: 600px) {
+    .tracking-initial-video-wrapper {
+        width: calc(100% + 40px);
+        height: 150px;
+        margin: -20px -20px 15px -20px;
+        border-radius: 16px 16px 0 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .tracking-initial-video-wrapper {
+        width: 100%;
+        height: 120px;
+        margin: 0 0 12px 0;
+        border-radius: 12px 12px 0 0;
+    }
+}
+
+@media (max-width: 360px) {
+    .tracking-initial-video-wrapper {
+        width: 100%;
+        height: 100px;
+        margin: 0 0 12px 0;
+        border-radius: 10px 10px 0 0;
+    }
+}
+
 .delivery-card-video-badge {
     position: absolute;
     top: 16px;
@@ -2828,6 +2891,15 @@ textarea {
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+@media (max-width: 480px) {
+    .delivery-card-video-badge {
+        padding: 4px 10px;
+        font-size: 0.7rem;
+        top: 8px;
+        left: 8px;
+    }
 }
 
 /* Test Mode Badge & Warnings */
@@ -2929,6 +3001,55 @@ textarea {
     100% {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(133, 100, 4, 0);
+    }
+}
+
+/* Mobile-Responsive Tracking Video Wrapper - Small Screens */
+@media (max-width: 520px) {
+    .delivery-card {
+        padding: 24px;
+    }
+    
+    .delivery-card-video-wrapper {
+        width: 100%;
+        margin: 0 0 12px 0;
+        height: 130px;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .delivery-card-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+}
+
+@media (max-width: 400px) {
+    .delivery-card {
+        padding: 20px;
+        border-radius: 20px;
+    }
+    
+    .delivery-card-video-wrapper {
+        width: 100%;
+        height: 110px;
+        margin: 0 0 10px 0;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .delivery-card-video-badge {
+        padding: 3px 8px;
+        font-size: 0.65rem;
+        top: 6px;
+        left: 6px;
+    }
+    
+    .delivery-card h2 {
+        font-size: 1.4rem;
+        margin-bottom: 12px;
+    }
+}
     }
 }
 

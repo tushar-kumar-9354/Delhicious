@@ -409,6 +409,10 @@
                         itemsHtml = '<div class="order-item-row">No items listed.</div>';
                     }
 
+                    const currentPaymentStatus = order.paymentStatus || (order.paymentMethod && order.paymentMethod.includes('Cash') ? 'To Be Paid' : 'Paid');
+                    const paymentBgColor = currentPaymentStatus === 'Paid' ? '#d4edda' : '#fff3cd';
+                    const paymentTextColor = currentPaymentStatus === 'Paid' ? '#155724' : '#856404';
+
                     orderCard.innerHTML = `
                         <div class="order-meta">
                             <div>
@@ -427,16 +431,25 @@
                             <span>Total Amount</span>
                             <span class="order-total-price">Rs. ${order.total || 0}/-</span>
                         </div>
-                        <div class="order-controls">
-                            <div class="status-select-wrapper">
-                                <span class="status-select-label">Status:</span>
-                                <select class="status-dropdown" data-id="${order.id}">
-                                    <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
-                                    <option value="Preparing" ${order.status === 'Preparing' ? 'selected' : ''}>Preparing</option>
-                                    <option value="Out for Delivery" ${order.status === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
-                                    <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                                    <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                                </select>
+                        <div class="order-controls" style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; width: 100%;">
+                            <div style="display: flex; gap: 16px; width: 100%; flex-wrap: wrap;">
+                                <div class="status-select-wrapper">
+                                    <span class="status-select-label">Status:</span>
+                                    <select class="status-dropdown" data-id="${order.id}">
+                                        <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                                        <option value="Preparing" ${order.status === 'Preparing' ? 'selected' : ''}>Preparing</option>
+                                        <option value="Out for Delivery" ${order.status === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
+                                        <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                                        <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                                    </select>
+                                </div>
+                                <div class="payment-select-wrapper" style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="status-select-label">Payment (${order.paymentMethod || 'Online'}):</span>
+                                    <select class="payment-dropdown" data-id="${order.id}" style="padding: 10px 16px; border-radius: 10px; border: 1px solid #e0d5ce; font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; outline: none; background-color: ${paymentBgColor}; color: ${paymentTextColor};">
+                                        <option value="Paid" ${currentPaymentStatus === 'Paid' ? 'selected' : ''}>Paid</option>
+                                        <option value="To Be Paid" ${currentPaymentStatus === 'To Be Paid' ? 'selected' : ''}>To Be Paid</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -452,6 +465,15 @@
                         updateOrderStatus(orderId, newStatus);
                     });
                 });
+
+                // Attach change handlers to payment status dropdowns
+                document.querySelectorAll('.payment-dropdown').forEach(dropdown => {
+                    dropdown.addEventListener('change', (e) => {
+                        const orderId = e.target.getAttribute('data-id');
+                        const newPaymentStatus = e.target.value;
+                        updateOrderPaymentStatus(orderId, newPaymentStatus);
+                    });
+                });
             }
 
             function updateOrderStatus(orderId, newStatus) {
@@ -463,9 +485,20 @@
                     return order;
                 });
                 localStorage.setItem('delhicious_orders', JSON.stringify(updatedOrders));
-                
-                // Trigger storage event manually so other tabs/main app update in real-time
                 window.dispatchEvent(new Event('storage'));
+            }
+
+            function updateOrderPaymentStatus(orderId, newPaymentStatus) {
+                const orders = JSON.parse(localStorage.getItem('delhicious_orders') || '[]');
+                const updatedOrders = orders.map(order => {
+                    if (order.id === orderId) {
+                        return { ...order, paymentStatus: newPaymentStatus };
+                    }
+                    return order;
+                });
+                localStorage.setItem('delhicious_orders', JSON.stringify(updatedOrders));
+                window.dispatchEvent(new Event('storage'));
+                loadAdminOrders();
             }
         });
     </script>

@@ -2707,6 +2707,7 @@ textarea {
     .delivery-card-video-wrapper {
         width: calc(100% + 40px);
         margin: -20px -20px 20px -20px;
+        height: 180px;
     }
     .delivery-tracker-container {
         flex-direction: column;
@@ -2768,6 +2769,14 @@ textarea {
     .qty-controls span {
         font-size: 0.85rem;
     }
+    
+    /* Responsive video wrapper for very small screens */
+    .delivery-card-video-wrapper {
+        width: 100%;
+        height: 150px;
+        margin: 0;
+        border-radius: 12px;
+    }
 }
 
 /* Delivery Video Wrapper inside Tracker Card */
@@ -2780,6 +2789,24 @@ textarea {
     border-radius: 20px 20px 0 0;
     border-bottom: 1px solid rgba(45, 27, 17, 0.05);
 }
+
+@media (max-width: 768px) {
+    .delivery-card-video-wrapper {
+        width: calc(100% + 60px);
+        height: 200px;
+        margin: -30px -30px 25px -30px;
+    }
+}
+
+@media (max-width: 600px) {
+    .delivery-card-video-wrapper {
+        width: calc(100% + 40px);
+        height: 180px;
+        margin: -20px -20px 20px -20px;
+        border-radius: 16px 16px 0 0;
+    }
+}
+
 .delivery-card-video {
     width: 100%;
     height: 100%;
@@ -2819,6 +2846,66 @@ textarea {
     width: 100%;
     box-sizing: border-box;
     box-shadow: 0 4px 12px rgba(133, 100, 4, 0.08);
+}
+
+/* All Orders View Responsive Grid */
+@media (max-width: 1200px) {
+    .delivery-card {
+        max-width: 100% !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .delivery-card[style*="maxWidth: 900px"] {
+        max-width: 95vw !important;
+    }
+    
+    /* Orders grid - reduce columns */
+    .delivering-order-grid-item {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .delivery-card[style*="maxWidth: 900px"] {
+        max-width: 100vw !important;
+        margin-left: -20px !important;
+        margin-right: -20px !important;
+        border-radius: 0 !important;
+    }
+    
+    .delivery-card[style*="maxWidth: 900px"] > div:first-child {
+        padding: 20px 15px !important;
+    }
+    
+    .delivery-card[style*="maxWidth: 900px"] > div:nth-child(2) {
+        padding: 15px !important;
+    }
+    
+    /* Orders grid - single column */
+    .orders-grid-item {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .delivery-card[style*="maxWidth: 900px"] {
+        max-width: 100vw !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+    
+    .delivery-card[style*="maxWidth: 900px"] > div:first-child {
+        padding: 15px 12px !important;
+    }
+    
+    .delivery-card[style*="maxWidth: 900px"] h2 {
+        font-size: 1.3rem !important;
+    }
+    
+    .delivery-card[style*="maxWidth: 900px"] > div:nth-child(2) {
+        padding: 12px !important;
+    }
 }
 
 .test-mode-badge-dot {

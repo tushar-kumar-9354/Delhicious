@@ -1018,6 +1018,7 @@ function App() {
             <button onClick={() => { handleNavigate('menu'); setMenuOpen(false); }} className={`nav-link ${view === 'menu' ? 'active' : ''}`}>Menu</button>
             <button onClick={() => { handleNavigate('home', 'about'); setMenuOpen(false); }} className="nav-link">About</button>
             <button onClick={() => { handleNavigate('home', 'contact'); setMenuOpen(false); }} className="nav-link">Contact</button>
+            <button onClick={() => { setView('all-orders'); setMenuOpen(false); }} className={`nav-link ${view === 'all-orders' ? 'active' : ''}`}>📋 All Orders</button>
           </div>
         </nav>
 
@@ -1661,7 +1662,37 @@ function App() {
                       activeTrackingOrder.status === 'Cancelled' ? '❌' : '🎉'}
                   </div>
                 )}
-                <h2 className="preparing-title">Order ID: {activeTrackingOrder.id}</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+                  <h2 className="preparing-title" style={{ margin: 0, minWidth: 'fit-content' }}>Order ID: {activeTrackingOrder.id}</h2>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(activeTrackingOrder.id);
+                      alert('Order ID copied to clipboard!');
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #b32619',
+                      backgroundColor: 'white',
+                      color: '#b32619',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '0.8rem',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.backgroundColor = '#b32619';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = 'white';
+                      e.currentTarget.style.color = '#b32619';
+                    }}
+                  >
+                    📋 Copy
+                  </button>
+                </div>
                 <p className="preparing-text">Current Status: <strong style={{ color: activeTrackingOrder.status === 'Cancelled' ? '#b32619' : 'inherit' }}>{activeTrackingOrder.status}</strong></p>
               </div>
 
@@ -1709,6 +1740,17 @@ function App() {
 
                     <div className="delivery-summary">
                       <h4>Order Summary</h4>
+                      
+                      {/* Customer Info Box */}
+                      <div style={{ backgroundColor: '#fffcfb', borderLeft: '3px solid #b32619', padding: '12px', borderRadius: '6px', marginBottom: '12px' }}>
+                        <p style={{ fontSize: '0.9rem', color: '#6e5d54', margin: '0 0 6px 0' }}>
+                          <strong>📝 Customer:</strong> {activeTrackingOrder.customerName || 'N/A'}
+                        </p>
+                        <p style={{ fontSize: '0.9rem', color: '#6e5d54', margin: 0 }}>
+                          <strong>📱 Phone:</strong> {activeTrackingOrder.customerPhone || 'N/A'}
+                        </p>
+                      </div>
+
                       <div className="summary-items-list" style={{ margin: '8px 0 16px 0', borderBottom: '1px solid rgba(45, 27, 17, 0.08)', paddingBottom: '8px' }}>
                         {activeTrackingOrder.items && activeTrackingOrder.items.map((item, idx) => (
                           <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#6e5d54', padding: '4px 0' }}>
@@ -1816,6 +1858,153 @@ function App() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* All Orders View */}
+      {view === 'all-orders' && (
+        <div className="preparing-overlay-container">
+          <div className="delivery-card animate-scale-up" style={{ maxWidth: '900px', width: '100%', maxHeight: '80vh', overflowY: 'auto', padding: '0' }}>
+            <div style={{ padding: '30px 30px 20px', borderBottom: '2px solid rgba(45, 27, 17, 0.1)', position: 'sticky', top: 0, backgroundColor: '#fffcfb', zIndex: 10 }}>
+              <h2 style={{ margin: 0, color: '#2d1b11', fontSize: '1.6rem' }}>📋 All Orders</h2>
+              <p style={{ margin: '8px 0 0', color: '#6e5d54' }}>{orders.length} order{orders.length !== 1 ? 's' : ''} found</p>
+            </div>
+            
+            <div style={{ padding: '20px' }}>
+              {orders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6e5d54' }}>
+                  <p style={{ fontSize: '1rem' }}>No orders yet. Start ordering now! 🍕</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {orders.slice().reverse().map((order) => (
+                    <div
+                      key={order.id}
+                      onClick={() => { setActiveTrackingOrder(order); setView('tracking'); }}
+                      style={{
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(45, 27, 17, 0.1)',
+                        backgroundColor: '#fffcfb',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                        gap: '12px',
+                        alignItems: 'center'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = '#b32619';
+                        e.currentTarget.style.backgroundColor = '#fff5f5';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(179, 38, 25, 0.15)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = 'rgba(45, 27, 17, 0.1)';
+                        e.currentTarget.style.backgroundColor = '#fffcfb';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      {/* Order ID */}
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#ab9e96', textTransform: 'uppercase', fontWeight: '600' }}>Order ID</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                          <strong style={{ color: '#2d1b11', fontSize: '0.95rem' }}>#{order.id}</strong>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(order.id);
+                              alert('Order ID copied!');
+                            }}
+                            style={{
+                              padding: '3px 6px',
+                              fontSize: '0.7rem',
+                              backgroundColor: '#e6f0ff',
+                              color: '#0066cc',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontWeight: '600'
+                            }}
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Customer Name */}
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#ab9e96', textTransform: 'uppercase', fontWeight: '600' }}>Customer</div>
+                        <div style={{ marginTop: '4px', color: '#2d1b11', fontWeight: '600', fontSize: '0.95rem' }}>
+                          {order.customerName || 'N/A'}
+                        </div>
+                      </div>
+
+                      {/* Phone */}
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#ab9e96', textTransform: 'uppercase', fontWeight: '600' }}>Phone</div>
+                        <div style={{ marginTop: '4px', color: '#2d1b11', fontSize: '0.9rem' }}>
+                          {order.customerPhone || 'N/A'}
+                        </div>
+                      </div>
+
+                      {/* Items Count */}
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#ab9e96', textTransform: 'uppercase', fontWeight: '600' }}>Items</div>
+                        <div style={{ marginTop: '4px', color: '#2d1b11', fontWeight: '600', fontSize: '0.95rem' }}>
+                          {order.items ? order.items.length : 0}
+                        </div>
+                      </div>
+
+                      {/* Total Amount */}
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#ab9e96', textTransform: 'uppercase', fontWeight: '600' }}>Amount</div>
+                        <div style={{ marginTop: '4px', color: '#b32619', fontWeight: '700', fontSize: '1rem' }}>
+                          Rs. {order.total}
+                        </div>
+                      </div>
+
+                      {/* Date */}
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#ab9e96', textTransform: 'uppercase', fontWeight: '600' }}>Date</div>
+                        <div style={{ marginTop: '4px', color: '#6e5d54', fontSize: '0.85rem' }}>
+                          {new Date(order.timestamp).toLocaleDateString()}
+                        </div>
+                      </div>
+
+                      {/* Status */}
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#ab9e96', textTransform: 'uppercase', fontWeight: '600' }}>Status</div>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            marginTop: '4px',
+                            padding: '5px 10px',
+                            borderRadius: '20px',
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            backgroundColor: order.status === 'Cancelled' ? '#ffe5e5' : order.status === 'Delivered' ? '#e6f6f0' : order.status === 'Out for Delivery' ? '#fff3cd' : '#e8f4f8',
+                            color: order.status === 'Cancelled' ? '#b32619' : order.status === 'Delivered' ? '#0f8a5f' : order.status === 'Out for Delivery' ? '#856404' : '#0066cc'
+                          }}
+                        >
+                          {order.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div style={{ padding: '15px 30px', borderTop: '1px solid rgba(45, 27, 17, 0.1)', textAlign: 'center' }}>
+              <button
+                className="btn-cancel"
+                onClick={() => setView('home')}
+                style={{ width: '100%', padding: '12px', fontSize: '0.95rem' }}
+              >
+                Back to Home
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

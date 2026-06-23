@@ -801,6 +801,7 @@ function App() {
 
     // Online Payment via Razorpay
     setIsProcessingPayment(true);
+    let orderData = null;
     try {
       const res = await fetch('/api/create-order', {
         method: 'POST',
@@ -810,26 +811,31 @@ function App() {
         body: JSON.stringify({ amount: totalAmount })
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to generate order from server');
+      if (res.ok) {
+        orderData = await res.json();
+      } else {
+        console.warn('Backend order generation failed or returned an error. Falling back to client-side checkout.');
       }
+    } catch (err) {
+      console.warn('Backend order endpoint not available (typical in static production hostings). Falling back to client-side checkout.', err);
+    }
 
-      const orderData = await res.json();
+    try {
       const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_MOCK_KEY_ID';
 
       const options = {
         key: keyId,
-        amount: orderData.amount,
-        currency: orderData.currency,
+        amount: orderData ? orderData.amount : Math.round(totalAmount * 100),
+        currency: orderData ? orderData.currency : 'INR',
         name: 'Delhicious Pizza Corner',
         description: 'Demo Checkout (Test Mode)',
         image: '/logo.png',
-        order_id: orderData.mock ? undefined : orderData.id,
+        order_id: (orderData && !orderData.mock) ? orderData.id : undefined,
         handler: function (response) {
           setIsProcessingPayment(false);
           setPaymentSuccess(true);
 
-          const newOrderId = orderData.id;
+          const newOrderId = orderData ? orderData.id : `ORD_MOCK_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
           const newOrder = {
             id: newOrderId,
             items: [...cartItems],

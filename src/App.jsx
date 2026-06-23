@@ -436,6 +436,11 @@ function App() {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [orderSummary, setOrderSummary] = useState(null);
 
+  // Mock Razorpay Simulator States
+  const [showMockRazorpayModal, setShowMockRazorpayModal] = useState(false);
+  const [mockPaymentTab, setMockPaymentTab] = useState('card');
+  const [mockCustomerDetails, setMockCustomerDetails] = useState({ name: '', phone: '', email: '' });
+
   // Tracking and Admin States
   const [orders, setOrders] = useState(() => {
     const saved = localStorage.getItem('delhicious_orders');
@@ -749,6 +754,43 @@ function App() {
     );
   };
 
+  const handlePaymentSuccess = (paymentId, method, name, phone, customOrderId) => {
+    setIsProcessingPayment(false);
+    setPaymentSuccess(true);
+
+    const newOrderId = customOrderId || `ORD_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const newOrder = {
+      id: newOrderId,
+      items: [...cartItems],
+      total: getCartTotal(),
+      address: checkoutAddress || "Manual Address Input",
+      status: "Confirmed",
+      timestamp: new Date().toISOString(),
+      customerName: name,
+      customerPhone: phone,
+      paymentId: paymentId || `pay_mock_${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+      paymentMethod: method || 'Razorpay Online (Test)',
+      paymentStatus: 'Paid'
+    };
+
+    setOrders(prevOrders => {
+      const updatedOrders = [...prevOrders, newOrder];
+      localStorage.setItem('delhicious_orders', JSON.stringify(updatedOrders));
+      return updatedOrders;
+    });
+    setOrderSummary(newOrder);
+    setActiveTrackingOrder(newOrder);
+
+    setTimeout(() => {
+      setPaymentSuccess(false);
+      setView('tracking');
+      setCartItems([]);
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+    }, 1500);
+  };
+
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     
@@ -813,57 +855,38 @@ function App() {
 
       if (res.ok) {
         orderData = await res.json();
-      } else {
-        console.warn('Backend order generation failed or returned an error. Falling back to client-side checkout.');
       }
     } catch (err) {
-      console.warn('Backend order endpoint not available (typical in static production hostings). Falling back to client-side checkout.', err);
+      console.warn('Backend order generation not available. Falling back to simulator.', err);
+    }
+
+    const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_MOCK_KEY_ID';
+
+    // If key is mock, or no backend order was created, fallback to mock simulator modal
+    if (keyId === 'rzp_test_MOCK_KEY_ID' || !orderData || orderData.mock) {
+      setMockCustomerDetails({ name, phone, email });
+      setIsProcessingPayment(false);
+      setShowMockRazorpayModal(true);
+      return;
     }
 
     try {
-      const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_MOCK_KEY_ID';
-
       const options = {
         key: keyId,
-        amount: orderData ? orderData.amount : Math.round(totalAmount * 100),
-        currency: orderData ? orderData.currency : 'INR',
+        amount: orderData.amount,
+        currency: orderData.currency,
         name: 'Delhicious Pizza Corner',
         description: 'Demo Checkout (Test Mode)',
         image: '/logo.png',
-        order_id: (orderData && !orderData.mock) ? orderData.id : undefined,
+        order_id: orderData.id,
         handler: function (response) {
-          setIsProcessingPayment(false);
-          setPaymentSuccess(true);
-
-          const newOrderId = orderData ? orderData.id : `ORD_MOCK_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-          const newOrder = {
-            id: newOrderId,
-            items: [...cartItems],
-            total: totalAmount,
-            address: checkoutAddress || "Manual Address Input",
-            status: "Confirmed",
-            timestamp: new Date().toISOString(),
-            customerName: name,
-            customerPhone: phone,
-            paymentId: response.razorpay_payment_id || `pay_mock_${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-            paymentMethod: 'Razorpay Online (Test)',
-            paymentStatus: 'Paid'
-          };
-
-          const updatedOrders = [...orders, newOrder];
-          setOrders(updatedOrders);
-          localStorage.setItem('delhicious_orders', JSON.stringify(updatedOrders));
-          setOrderSummary(newOrder);
-          setActiveTrackingOrder(newOrder);
-
-          setTimeout(() => {
-            setPaymentSuccess(false);
-            setView('tracking');
-            setCartItems([]);
-            if (scrollContainerRef.current) {
-              scrollContainerRef.current.scrollTop = 0;
-            }
-          }, 1500);
+          handlePaymentSuccess(
+            response.razorpay_payment_id,
+            'Razorpay Online (SDK)',
+            name,
+            phone,
+            orderData.id
+          );
         },
         prefill: {
           name: name,
@@ -894,9 +917,10 @@ function App() {
       });
       rzp.open();
     } catch (err) {
-      console.error(err);
-      alert('Error initializing payment: ' + err.message);
+      console.warn('Error opening Razorpay SDK, falling back to simulator modal:', err.message);
+      setMockCustomerDetails({ name, phone, email });
       setIsProcessingPayment(false);
+      setShowMockRazorpayModal(true);
     }
   };
 
@@ -1850,6 +1874,124 @@ function App() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+      {/* Mock Razorpay Simulator Modal */}
+      {showMockRazorpayModal && (
+        <div className="rzp-mock-overlay">
+          <div className="rzp-mock-modal">
+            <div className="rzp-mock-header">
+              <div className="rzp-mock-header-info">
+                <h3>Delhicious Pizza Corner</h3>
+                <p>Test Mode Simulator</p>
+              </div>
+              <div className="rzp-mock-amount-box">
+                <span className="rzp-mock-amount-label">Amount</span>
+                <span className="rzp-mock-amount">Rs. {getCartTotal()}</span>
+              </div>
+            </div>
+            
+            <div className="rzp-mock-body">
+              <div className="rzp-mock-sidebar">
+                <button
+                  className={`rzp-mock-tab ${mockPaymentTab === 'card' ? 'active' : ''}`}
+                  onClick={() => setMockPaymentTab('card')}
+                >
+                  💳 Card
+                </button>
+                <button
+                  className={`rzp-mock-tab ${mockPaymentTab === 'upi' ? 'active' : ''}`}
+                  onClick={() => setMockPaymentTab('upi')}
+                >
+                  📱 UPI / QR
+                </button>
+                <button
+                  className={`rzp-mock-tab ${mockPaymentTab === 'netbanking' ? 'active' : ''}`}
+                  onClick={() => setMockPaymentTab('netbanking')}
+                >
+                  🏛️ Netbanking
+                </button>
+                <button
+                  className={`rzp-mock-tab ${mockPaymentTab === 'wallet' ? 'active' : ''}`}
+                  onClick={() => setMockPaymentTab('wallet')}
+                >
+                  👛 Wallet
+                </button>
+              </div>
+              
+              <div className="rzp-mock-content">
+                {mockPaymentTab === 'card' && (
+                  <div className="rzp-mock-form-group">
+                    <label>Card details</label>
+                    <input type="text" placeholder="Card Number" defaultValue="4111 1111 1111 1111" disabled />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input type="text" placeholder="Expiry" defaultValue="12 / 30" disabled style={{ flex: 1 }} />
+                      <input type="password" placeholder="CVV" defaultValue="123" disabled style={{ width: '80px' }} />
+                    </div>
+                  </div>
+                )}
+                
+                {mockPaymentTab === 'upi' && (
+                  <div className="rzp-mock-form-group">
+                    <label>UPI Address</label>
+                    <input type="text" placeholder="e.g. success@razorpay" defaultValue="success@razorpay" disabled />
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
+                      UPI payment will be simulated instantly.
+                    </p>
+                  </div>
+                )}
+
+                {mockPaymentTab === 'netbanking' && (
+                  <div className="rzp-mock-form-group">
+                    <label>Select Bank</label>
+                    <select defaultValue="sbi" disabled>
+                      <option value="sbi">State Bank of India</option>
+                      <option value="hdfc">HDFC Bank</option>
+                      <option value="icici">ICICI Bank</option>
+                    </select>
+                  </div>
+                )}
+
+                {mockPaymentTab === 'wallet' && (
+                  <div className="rzp-mock-form-group">
+                    <label>Select Wallet</label>
+                    <select defaultValue="paytm" disabled>
+                      <option value="paytm">Paytm</option>
+                      <option value="phonepe">PhonePe</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="rzp-mock-footer">
+                  <div className="rzp-mock-badge">
+                    ⚠️ Demo Sandbox Simulator - No real money
+                  </div>
+                  <button
+                    className="rzp-mock-btn-pay"
+                    onClick={() => {
+                      setShowMockRazorpayModal(false);
+                      handlePaymentSuccess(
+                        `pay_sim_${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+                        `Razorpay Simulator (${mockPaymentTab.toUpperCase()})`,
+                        mockCustomerDetails.name,
+                        mockCustomerDetails.phone
+                      );
+                    }}
+                  >
+                    Simulate Success Pay
+                  </button>
+                  <button
+                    className="rzp-mock-btn-cancel"
+                    onClick={() => {
+                      setShowMockRazorpayModal(false);
+                    }}
+                  >
+                    Cancel Payment
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -473,6 +473,18 @@ function App() {
     }
   }, [view]);
 
+  // Load Razorpay script dynamically
+  useEffect(() => {
+    const scriptId = 'razorpay-checkout-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
   const MIN_TOTAL_MS = 4000; // Minimum 4s display time for loading video
 
   // Web Audio API initialization to boost volume to 200% (gain of 2.0)
@@ -737,42 +749,149 @@ function App() {
     );
   };
 
-  const handleCheckoutSubmit = (e) => {
+  const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
-    setIsCartOpen(false);
-    setIsProcessingPayment(true);
+    
+    const form = e.target;
+    const name = form.querySelector('input[placeholder="John Doe"]').value;
+    const phone = form.querySelector('input[type="tel"]').value;
+    const email = form.querySelector('input[type="email"]')?.value || '';
+    const paymentMethod = form.querySelector('select').value;
+    const totalAmount = getCartTotal();
 
-    setTimeout(() => {
-      setIsProcessingPayment(false);
-      setPaymentSuccess(true);
-
-      const newOrderId = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const newOrder = {
-        id: newOrderId,
-        items: [...cartItems],
-        total: getCartTotal(),
-        address: checkoutAddress || "Manual Address Input",
-        status: "Confirmed",
-        timestamp: new Date().toISOString(),
-        customerName: e.target[0].value,
-        customerPhone: e.target[1].value
-      };
-
-      const updatedOrders = [...orders, newOrder];
-      setOrders(updatedOrders);
-      localStorage.setItem('delhicious_orders', JSON.stringify(updatedOrders));
-      setOrderSummary(newOrder);
-      setActiveTrackingOrder(newOrder);
+    if (paymentMethod === 'cash') {
+      setIsCartOpen(false);
+      setIsProcessingPayment(true);
 
       setTimeout(() => {
-        setPaymentSuccess(false);
-        setView('tracking');
-        setCartItems([]);
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = 0;
+        setIsProcessingPayment(false);
+        setPaymentSuccess(true);
+
+        const newOrderId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const newOrder = {
+          id: newOrderId,
+          items: [...cartItems],
+          total: totalAmount,
+          address: checkoutAddress || "Manual Address Input",
+          status: "Confirmed",
+          timestamp: new Date().toISOString(),
+          customerName: name,
+          customerPhone: phone,
+          paymentMethod: 'Cash on Delivery',
+          paymentStatus: 'To Be Paid'
+        };
+
+        const updatedOrders = [...orders, newOrder];
+        setOrders(updatedOrders);
+        localStorage.setItem('delhicious_orders', JSON.stringify(updatedOrders));
+        setOrderSummary(newOrder);
+        setActiveTrackingOrder(newOrder);
+
+        setTimeout(() => {
+          setPaymentSuccess(false);
+          setView('tracking');
+          setCartItems([]);
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = 0;
+          }
+        }, 1500);
+      }, 1000);
+      return;
+    }
+
+    // Online Payment via Razorpay
+    setIsProcessingPayment(true);
+    try {
+      const res = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount: totalAmount })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to generate order from server');
+      }
+
+      const orderData = await res.json();
+      const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_MOCK_KEY_ID';
+
+      const options = {
+        key: keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Delhicious Pizza Corner',
+        description: 'Demo Checkout (Test Mode)',
+        image: '/logo.png',
+        order_id: orderData.mock ? undefined : orderData.id,
+        handler: function (response) {
+          setIsProcessingPayment(false);
+          setPaymentSuccess(true);
+
+          const newOrderId = orderData.id;
+          const newOrder = {
+            id: newOrderId,
+            items: [...cartItems],
+            total: totalAmount,
+            address: checkoutAddress || "Manual Address Input",
+            status: "Confirmed",
+            timestamp: new Date().toISOString(),
+            customerName: name,
+            customerPhone: phone,
+            paymentId: response.razorpay_payment_id || `pay_mock_${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+            paymentMethod: 'Razorpay Online (Test)',
+            paymentStatus: 'Paid'
+          };
+
+          const updatedOrders = [...orders, newOrder];
+          setOrders(updatedOrders);
+          localStorage.setItem('delhicious_orders', JSON.stringify(updatedOrders));
+          setOrderSummary(newOrder);
+          setActiveTrackingOrder(newOrder);
+
+          setTimeout(() => {
+            setPaymentSuccess(false);
+            setView('tracking');
+            setCartItems([]);
+            if (scrollContainerRef.current) {
+              scrollContainerRef.current.scrollTop = 0;
+            }
+          }, 1500);
+        },
+        prefill: {
+          name: name,
+          email: email,
+          contact: phone
+        },
+        notes: {
+          address: checkoutAddress
+        },
+        theme: {
+          color: '#b32619'
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessingPayment(false);
+          }
         }
-      }, 1500);
-    }, 1500);
+      };
+
+      if (!window.Razorpay) {
+        throw new Error('Razorpay SDK not loaded. Please check your internet connection.');
+      }
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp) {
+        setIsProcessingPayment(false);
+        alert(`Payment failed: ${resp.error.description}`);
+      });
+      rzp.open();
+    } catch (err) {
+      console.error(err);
+      alert('Error initializing payment: ' + err.message);
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleTrackOrderSubmit = (e) => {
@@ -798,6 +917,20 @@ function App() {
     const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
     setOrders(updated);
     localStorage.setItem('delhicious_orders', JSON.stringify(updated));
+  };
+
+  const handleAdminPaymentStatusChange = (orderId, newPaymentStatus) => {
+    const updated = orders.map(o => o.id === orderId ? { ...o, paymentStatus: newPaymentStatus } : o);
+    setOrders(updated);
+    localStorage.setItem('delhicious_orders', JSON.stringify(updated));
+  };
+
+  const handleUserCancelOrder = (orderId) => {
+    const updated = orders.map(o => o.id === orderId ? { ...o, status: 'Cancelled' } : o);
+    setOrders(updated);
+    localStorage.setItem('delhicious_orders', JSON.stringify(updated));
+    const targetOrder = updated.find(o => o.id === orderId);
+    setActiveTrackingOrder(targetOrder);
   };
 
   return (
@@ -1262,6 +1395,10 @@ function App() {
               )}
 
               <div className="checkout-card">
+                <div className="test-mode-badge">
+                  <span className="test-mode-badge-dot"></span>
+                  <span>Test Mode – No Real Money Involved</span>
+                </div>
                 <h2 className="checkout-title">Complete Your Order</h2>
                 <div className="checkout-summary">
                   <h3>Order Summary</h3>
@@ -1318,10 +1455,9 @@ function App() {
 
                   <div className="form-group-full">
                     <label>Payment Method</label>
-                    <select required>
+                    <select required defaultValue="razorpay">
+                      <option value="razorpay">Online Payment (Razorpay Test Mode)</option>
                       <option value="cash">Cash on Delivery</option>
-                      <option value="card">Credit / Debit Card</option>
-                      <option value="upi">UPI</option>
                     </select>
                   </div>
                   <div className="checkout-actions">
@@ -1550,7 +1686,14 @@ function App() {
                         ))}
                       </div>
                       <p><strong>Total Items:</strong> {activeTrackingOrder.items.length}</p>
-                      <p><strong>Amount Paid:</strong> Rs. {activeTrackingOrder.total}</p>
+                      <p>
+                        <strong>
+                          {activeTrackingOrder.paymentStatus === 'To Be Paid' || (activeTrackingOrder.paymentMethod && activeTrackingOrder.paymentMethod.includes('Cash'))
+                            ? 'Amount to be Paid (COD):'
+                            : 'Amount Paid (Online):'}
+                        </strong>{' '}
+                        Rs. {activeTrackingOrder.total}
+                      </p>
                       <p><strong>Delivering to:</strong> {activeTrackingOrder.address}</p>
                     </div>
                   </div>
@@ -1582,18 +1725,59 @@ function App() {
                       ))}
                     </div>
                     <p style={{ fontSize: '0.95rem', color: '#6e5d54', margin: '4px 0' }}><strong>Total Items:</strong> {activeTrackingOrder.items.length}</p>
-                    <p style={{ fontSize: '0.95rem', color: '#6e5d54', margin: '4px 0' }}><strong>Amount:</strong> Rs. {activeTrackingOrder.total}</p>
+                    <p style={{ fontSize: '0.95rem', color: '#6e5d54', margin: '4px 0' }}>
+                      <strong>
+                        {activeTrackingOrder.paymentStatus === 'To Be Paid' || (activeTrackingOrder.paymentMethod && activeTrackingOrder.paymentMethod.includes('Cash'))
+                          ? 'Amount to be Paid (COD):'
+                          : 'Amount Paid (Online):'}
+                      </strong>{' '}
+                      Rs. {activeTrackingOrder.total}
+                    </p>
                   </div>
                 </>
               )}
 
-              <div className="delivery-actions">
+              <div className="delivery-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', alignItems: 'center' }}>
+                {activeTrackingOrder.status !== 'Cancelled' && activeTrackingOrder.status !== 'Delivered' && (() => {
+                  const elapsedMs = Date.now() - new Date(activeTrackingOrder.timestamp).getTime();
+                  const tenMinutesMs = 10 * 60 * 1000;
+                  const timeLeftMins = Math.max(0, Math.ceil((tenMinutesMs - elapsedMs) / 60000));
+                  const canCancel = elapsedMs < tenMinutesMs;
+
+                  return (
+                    <div style={{ width: '100%', textAlign: 'center' }}>
+                      {canCancel ? (
+                        <>
+                          <p style={{ fontSize: '0.85rem', color: '#856404', marginBottom: '8px' }}>
+                            ⏰ You can cancel this order within the next {timeLeftMins} minute{timeLeftMins !== 1 ? 's' : ''}.
+                          </p>
+                          <button
+                            className="btn-pay-now"
+                            style={{ backgroundColor: '#b32619', width: '100%', padding: '14px', borderRadius: '10px', display: 'block', margin: '0 auto 8px auto' }}
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to cancel this order?')) {
+                                handleUserCancelOrder(activeTrackingOrder.id);
+                              }
+                            }}
+                          >
+                            Cancel Order
+                          </button>
+                        </>
+                      ) : (
+                        <p style={{ fontSize: '0.85rem', color: '#6e5d54', marginBottom: '8px' }}>
+                          🚫 Cancellation is no longer available (10-minute window has passed).
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
                 <button
                   className="btn-back-home outline"
                   onClick={() => {
                     setView('home');
                     if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
                   }}
+                  style={{ width: '100%' }}
                 >
                   Back to Home
                 </button>
@@ -1624,17 +1808,39 @@ function App() {
                 <div className="order-items">
                   Items: {order.items.length} | Total: Rs. {order.total}
                 </div>
-                <div className="order-status-control">
-                  <select
-                    value={order.status}
-                    onChange={e => handleAdminStatusChange(order.id, e.target.value)}
-                  >
-                    <option value="Confirmed">Confirmed</option>
-                    <option value="Preparing">Preparing</option>
-                    <option value="Out for Delivery">Out for Delivery</option>
-                    <option value="Delivered">Delivered</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                  <div className="order-status-control" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.9rem', color: '#6e5d54' }}>Status:</span>
+                    <select
+                      value={order.status}
+                      onChange={e => handleAdminStatusChange(order.id, e.target.value)}
+                    >
+                      <option value="Confirmed">Confirmed</option>
+                      <option value="Preparing">Preparing</option>
+                      <option value="Out for Delivery">Out for Delivery</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  <div className="order-payment-control" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.9rem', color: '#6e5d54' }}>Payment ({order.paymentMethod || 'Online'}):</span>
+                    <select
+                      value={order.paymentStatus || (order.paymentMethod && order.paymentMethod.includes('Cash') ? 'To Be Paid' : 'Paid')}
+                      onChange={e => handleAdminPaymentStatusChange(order.id, e.target.value)}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid #ccc',
+                        backgroundColor: (order.paymentStatus === 'Paid' || (!order.paymentStatus && order.paymentMethod && !order.paymentMethod.includes('Cash'))) ? '#d4edda' : '#fff3cd',
+                        color: (order.paymentStatus === 'Paid' || (!order.paymentStatus && order.paymentMethod && !order.paymentMethod.includes('Cash'))) ? '#155724' : '#856404',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="Paid" style={{ backgroundColor: '#fff', color: '#000' }}>Paid</option>
+                      <option value="To Be Paid" style={{ backgroundColor: '#fff', color: '#000' }}>To Be Paid</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             ))}
